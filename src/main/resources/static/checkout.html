@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout & Order Finalization – PharmaTech</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Razorpay Official Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- Leaflet Map Fallback -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <style>
+    @keyframes modalPop {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(5, 150, 105, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0); }
+    }
+    .checkout-container {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 2rem;
+    }
+    @media (max-width: 860px) {
+      .checkout-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .checkout-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+    }
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 0.6rem;
+    }
+    .map-picker-box {
+      height: 240px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-light);
+      margin-top: 0.75rem;
+      position: relative;
+    }
+    .priority-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .priority-card {
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+    }
+    .priority-card.active-normal {
+      border-color: var(--primary);
+      background: #f0fdf4;
+    }
+    .priority-card.active-emergency {
+      border-color: #ef4444;
+      background: #fff5f5;
+    }
+    .payment-option-card {
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 0.85rem;
+      transition: all 0.2s;
+    }
+    .payment-option-card.selected {
+      border-color: var(--primary);
+      background: #f0fdf4;
+    }
+    .cart-summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px dashed var(--border-light);
+    }
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    .breakdown-row.total {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+      border-top: 2px solid #e2e8f0;
+      padding-top: 0.75rem;
+      margin-top: 0.75rem;
+    }
+  </style>
+</head>
+<body style="background: #f8fafc;">
+
+  <!-- Header Navigation -->
+  <header style="background: white; border-bottom: 1px solid var(--border-light); padding: 1rem 0; position: sticky; top: 0; z-index: 50;">
+    <div class="header-container" style="max-width: 1100px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+      <a href="index.html" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+        <span style="font-size: 1.6rem;">💊</span>
+        <div>
+          <span style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -0.5px;">PharmaTech</span>
+          <span style="font-size: 0.7rem; display: block; color: var(--text-muted); font-weight: 600;">SECURE CHECKOUT</span>
+        </div>
+      </a>
+      <a href="index.html" class="btn btn-outline-primary" style="font-size: 0.85rem; padding: 0.45rem 0.9rem;">
+        ← Back to Medicines Catalog
+      </a>
+    </div>
+  </header>
+
+  <!-- Checkout Main Form -->
+  <div class="checkout-container">
+    
+    <!-- LEFT COLUMN: Address, Priority, Payment -->
+    <div>
+      
+      <!-- Section 1: Customer Contact & Delivery Address -->
+      <div class="checkout-card">
+        <h3 class="section-title">
+          <span>📍</span> 1. Delivery Address & Contact
+        </h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="custFullName" class="form-input" placeholder="e.g. Rahul Sharma" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number *</label>
+            <input type="tel" id="custPhoneNumber" class="form-input" placeholder="10-digit mobile number" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label">Complete Street Address *</label>
+          <input type="text" id="custDeliveryAddress" class="form-input" placeholder="Flat / House No, Building, Road, Locality" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label class="form-label">City *</label>
+            <input type="text" id="custCity" class="form-input" placeholder="Bangalore or Coimbatore" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pincode *</label>
+            <input type="text" id="custPincode" class="form-input" placeholder="e.g. 560038 or 641062" required>
+          </div>
+        </div>
+
+        <!-- GPS Location Trigger -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+          <span style="font-size: 0.82rem; color: var(--text-muted);">
+            GPS Coordinates: <strong id="lblCoordinates">12.9784, 77.6408</strong>
+          </span>
+          <button type="button" id="btnUseGpsLocation" class="btn btn-outline-primary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+            🎯 Use My GPS Location
+          </button>
+        </div>
+
+        <!-- Interactive Map Picker -->
+        <div class="map-picker-box" id="mapPickerContainer">
+          <!-- Leaflet / Google Map renders here -->
+        </div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">
+          💡 Drag the pin to fine-tune your exact doorstep drop location.
+        </span>
+      </div>
+
+      <!-- Section 2: Delivery Priority Selection -->
+      <div class="checkout-card">
+        <h3 class="section-title">
+          <span>⚡</span> 2. Delivery Priority
+        </h3>
+        <div class="priority-selector">
+          <label class="priority-card active-normal" id="cardPriorityNormal">
+            <input type="radio" name="deliveryPriority" value="NORMAL" checked style="margin-top: 4px;">
+            <div>
+              <strong style="color: var(--text-main); font-size: 0.95rem; display: block;">Standard Delivery</strong>
+              <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin: 0.2rem 0;">Delivery in 20–35 minutes</span>
+              <span style="font-size: 0.85rem; font-weight: 700; color: #059669;">₹45.00 delivery fee</span>
+            </div>
+          </label>
+
+          <label class="priority-card" id="cardPriorityEmergency">
+            <input type="radio" name="deliveryPriority" value="EMERGENCY" style="margin-top: 4px;">
+            <div>
+              <strong style="color: #b91c1c; font-size: 0.95rem; display: block;">🚨 Emergency Priority</strong>
+              <span style="font-size: 0.8rem; color: #b91c1c; display: block; margin: 0.2rem 0;">Instant dispatch (< 20 mins)</span>
+              <span style="font-size: 0.85rem; font-weight: 700; color: #b91c1c;">₹75.00 delivery fee</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Section 3: Payment Method Selection (Official Gateway & COD) -->
+      <div class="checkout-card">
+        <h3 class="section-title">
+          <span>💳</span> 3. Payment Method Selection
+        </h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Please manually select your preferred payment method below.
+        </p>
+        
+        <!-- Option 1: Cash on Delivery -->
+        <label class="payment-option-card" id="optPaymentCOD" style="cursor: pointer;">
+          <input type="radio" name="paymentMethod" value="COD" style="margin-top: 3px;">
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <strong style="font-size: 0.95rem; color: var(--text-main);">💵 Cash on Delivery (Pay on Delivery)</strong>
+              <span style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px;">NO PREPAYMENT REQUIRED</span>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.2rem;">
+              Place order immediately and send to the pharmacy. Pay with cash or scan the delivery partner's UPI QR upon doorstep arrival.
+            </span>
+          </div>
+        </label>
+
+        <!-- Option 2: UPI Payment (QR Code & Admin Verification) -->
+        <label class="payment-option-card" id="optPaymentUPI" style="cursor: pointer;">
+          <input type="radio" name="paymentMethod" value="UPI" style="margin-top: 3px;">
+          <div style="flex: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <strong style="font-size: 0.95rem; color: var(--text-main);">⚡ UPI Payment (Scan QR & Upload Screenshot)</strong>
+              <span style="background: #ecfdf5; color: #047857; font-size: 0.72rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid #a7f3d0;">5-MIN VERIFIED</span>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.2rem;">
+              Pay via Google Pay, PhonePe, Paytm, or BHIM. Scan the order QR code and upload payment screenshot within 5 minutes for admin verification.
+            </span>
+          </div>
+        </label>
+
+        <!-- UPI Details Panel (Shown when UPI is selected) -->
+        <div id="upiPaymentDetailsCard" style="display: none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 1.1rem; margin-top: -0.5rem; margin-bottom: 0.75rem; animation: modalPop 0.2s ease-out;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.25rem;">🇮🇳</span>
+              <strong style="font-size: 0.9rem; color: #166534;">Direct UPI Payment & Admin Verification</strong>
+            </div>
+            <span style="background: #dcfce7; color: #15803d; font-size: 0.7rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid #bbf7d0;">5-MINUTE SESSION</span>
+          </div>
+
+          <div style="background: #ffffff; border: 1px solid #dcfce7; border-radius: 8px; padding: 0.85rem; font-size: 0.82rem; color: #334155; margin-bottom: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span style="color: #64748b;">Merchant Name:</span>
+              <strong style="color: #1e3a8a;">PharmaTech Healthcare Platform</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span style="color: #64748b;">Fulfilling Pharmacy:</span>
+              <strong id="upiCardPharmacyName" style="color: #047857;">Apollo Pharmacy</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span style="color: #64748b;">Platform Collection UPI ID:</span>
+              <strong style="color: #0284c7; font-family: monospace;">srrivarshanmr@okaxis</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-top: 0.35rem; border-top: 1px dashed #e2e8f0;">
+              <span style="color: #64748b;">Total Amount Payable:</span>
+              <strong id="upiCardPayableAmount" style="color: #15803d; font-size: 1rem; font-weight: 800;">₹0.00</strong>
+            </div>
+          </div>
+
+          <div style="font-size: 0.76rem; color: #14532d; line-height: 1.45; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 8px; padding: 0.65rem 0.85rem;">
+            ℹ️ <strong>How UPI Verification Works:</strong> When you click <em>Proceed to Pay via UPI</em>, a dynamic QR code linked to this order amount will be generated with a <strong>5-minute countdown timer</strong>. After completing the payment in your UPI app, simply upload the payment screenshot to forward it for instant admin verification.
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Order Summary & Price Breakdown -->
+    <div>
+      <div class="checkout-card" style="position: sticky; top: 5rem;">
+        <h3 class="section-title">
+          <span>🛍️</span> 4. Order Summary
+        </h3>
+
+        <!-- Fulfilling Pharmacy Details -->
+        <div id="fulfillingPharmacyBanner" style="background: #f1f5f9; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.85rem;">
+          <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Dispensing Pharmacy:</span>
+          <strong id="summaryPharmacyName" style="color: var(--primary-dark); font-size: 0.95rem;">Apollo Pharmacy - Metro Express</strong>
+          <span id="summaryPharmacyAddress" style="display: block; color: #475569; font-size: 0.78rem;">Indiranagar, Bangalore</span>
+        </div>
+
+        <!-- Cart Items List -->
+        <div id="checkoutCartItemsList" style="max-height: 220px; overflow-y: auto; margin-bottom: 1rem;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Price Breakdown -->
+        <div style="border-top: 1px solid var(--border-light); padding-top: 1rem; margin-top: 1rem;">
+          <div class="breakdown-row">
+            <span>Medicines Subtotal</span>
+            <span id="lblSubtotal">₹0.00</span>
+          </div>
+          <div class="breakdown-row">
+            <span id="lblDeliveryFeeDesc">Standard Delivery Fee</span>
+            <span id="lblDeliveryFee">₹45.00</span>
+          </div>
+          <div class="breakdown-row">
+            <span>Estimated Govt GST (5%)</span>
+            <span id="lblTaxAmount">₹0.00</span>
+          </div>
+          <div class="breakdown-row total">
+            <span>Grand Total To Pay</span>
+            <span id="lblGrandTotal" style="color: var(--primary);">₹0.00</span>
+          </div>
+        </div>
+
+        <!-- Place Order Button -->
+        <button id="btnPlaceOrder" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.05rem; font-weight: 800; margin-top: 1.25rem;">
+          Select Payment Method to Proceed →
+        </button>
+
+        <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 0.75rem;">
+          🛡️ 100% Genuine Medicines • Sealed Packets • Verified Delivery Partner
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal: UPI Payment QR, 5-Min Timer & Screenshot Upload -->
+  <div id="upiPaymentModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px); z-index: 9998; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;">
+    <div style="background: #ffffff; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3); width: 100%; max-width: 500px; border: 1px solid #e2e8f0; animation: modalPop 0.25s ease-out; padding: 1.75rem; text-align: center; position: relative; margin: auto;">
+      
+      <!-- Stage A: QR Code & Screenshot Upload Form -->
+      <div id="upiQrFormSection">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <span style="background: #ecfdf5; color: #065f46; font-size: 0.75rem; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 9999px; border: 1px solid #a7f3d0;">
+            ⚡ UPI PAYMENT QR
+          </span>
+          <button type="button" id="btnCloseUpiModal" style="background: none; border: none; font-size: 1.25rem; color: #94a3b8; cursor: pointer; padding: 0.2rem 0.5rem;">✕</button>
+        </div>
+
+        <h3 style="font-size: 1.28rem; font-weight: 800; color: #0f172a; margin: 0 0 0.35rem 0;">Scan QR & Pay via UPI</h3>
+        <p style="font-size: 0.8rem; color: #64748b; margin: 0 0 0.85rem 0;">
+          Scan the QR code linked to this order, complete the transfer, and upload your payment screenshot.
+        </p>
+
+        <!-- 5-Minute Countdown Timer Box -->
+        <div id="upiTimerContainer" style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px; padding: 0.6rem 1rem; margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.2rem;">⏱️</span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: #92400e;">Payment Window:</span>
+          </div>
+          <div id="upiCountdownTimer" style="font-family: monospace; font-size: 1.3rem; font-weight: 900; color: #b45309; letter-spacing: 1px;">
+            05:00
+          </div>
+        </div>
+
+        <!-- Order & Amount Summary Card -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 0.95rem; margin-bottom: 0.85rem; text-align: left; font-size: 0.82rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+            <span style="color: #64748b;">Order Number:</span>
+            <strong id="modalOrderNumber" style="font-family: monospace; color: #1e3a8a;">ORD-0000</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+            <span style="color: #64748b;">Dispensing Pharmacy:</span>
+            <strong id="modalPharmacyName" style="color: #047857;">Apollo Pharmacy</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+            <span style="color: #64748b;">Merchant UPI ID:</span>
+            <strong id="modalMerchantUpi" style="font-family: monospace; color: #0284c7;">srrivarshanmr@okaxis</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-top: 0.35rem; border-top: 1px dashed #cbd5e1;">
+            <span style="color: #475569; font-weight: 700;">Exact Payable Amount:</span>
+            <strong id="modalPayableAmount" style="color: #059669; font-size: 1.15rem; font-weight: 900;">₹0.00</strong>
+          </div>
+        </div>
+
+        <!-- Dynamic QR Code Container -->
+        <div style="background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 14px; padding: 0.85rem; display: inline-block; margin-bottom: 0.85rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <img id="modalQrCodeImg" src="" alt="Payment QR Code" style="width: 180px; height: 180px; display: block; border-radius: 8px; margin: 0 auto;">
+          <span style="font-size: 0.72rem; color: #64748b; font-weight: 600; display: block; margin-top: 0.4rem;">
+            Scan with GPay / PhonePe / Paytm / BHIM
+          </span>
+        </div>
+
+        <!-- Screenshot Upload Form -->
+        <div style="background: #f1f5f9; border-radius: 12px; padding: 0.85rem 1rem; text-align: left; margin-bottom: 0.85rem;">
+          <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #1e293b; margin-bottom: 0.35rem;">
+            📸 Upload Payment Screenshot (Mandatory)
+          </label>
+          <input type="file" id="modalScreenshotInput" accept="image/*,.png,.jpg,.jpeg" class="form-input" style="padding: 0.4rem; font-size: 0.8rem; margin-bottom: 0.5rem; background: white;">
+          
+          <div id="modalScreenshotPreview" style="display: none; margin-bottom: 0.5rem; text-align: center;">
+            <img id="imgScreenshotThumb" src="" alt="Screenshot Preview" style="max-height: 100px; max-width: 100%; border-radius: 6px; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
+          </div>
+
+          <label style="display: block; font-size: 0.76rem; font-weight: 700; color: #475569; margin-bottom: 0.25rem;">
+            UPI Reference / UTR Number (Optional, 12 digits)
+          </label>
+          <input type="text" id="modalUtrInput" class="form-input" placeholder="e.g. 432109876543" style="font-size: 0.8rem; font-family: monospace;">
+        </div>
+
+        <!-- Submit Button -->
+        <button type="button" id="btnSubmitScreenshot" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 800; border-radius: 10px; background: #059669; border-color: #059669;">
+          📤 Submit Payment Screenshot for Verification →
+        </button>
+
+        <!-- Timer Expired Notice (Hidden initially) -->
+        <div id="modalTimerExpiredAlert" style="display: none; margin-top: 0.75rem; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 0.65rem; font-size: 0.8rem; color: #991b1b; text-align: center;">
+          ⚠️ <strong>Payment Session Expired:</strong> The 5-minute window for this session has ended. Uploads are stopped.
+          <div style="margin-top: 0.4rem;">
+            <button type="button" id="btnRetryExpiredSession" class="btn btn-outline-primary" style="font-size: 0.75rem; padding: 0.3rem 0.75rem; border-color: #991b1b; color: #991b1b;">
+              🔄 Renew 5-Minute Session
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage B: Waiting for Admin Verification -->
+      <div id="upiWaitingSection" style="display: none; padding: 1.5rem 0.5rem;">
+        <div style="width: 72px; height: 72px; background: #fef3c7; border: 3px solid #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; font-size: 2.2rem; color: #d97706; animation: spinHourglass 3s linear infinite;">
+          ⏳
+        </div>
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: #92400e; margin: 0 0 0.4rem 0;">
+          Payment Submitted — Waiting for Admin Verification
+        </h3>
+        <p style="font-size: 0.85rem; color: #475569; line-height: 1.5; margin: 0 0 1.25rem 0;">
+          Your payment screenshot for Order <strong id="waitingOrderNumber" style="font-family: monospace; color: #1e3a8a;">#ORD-0000</strong> has been received.<br>
+          Our admin team is currently verifying the transaction against the received bank records.<br>
+          Your order will be automatically confirmed and sent to the pharmacy as soon as approved.
+        </p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 0.65rem;">
+          <span style="display: inline-block; width: 10px; height: 10px; background: #059669; border-radius: 50%; animation: pulseGreen 1.5s infinite;"></span>
+          <span style="color: #475569; font-weight: 600;">Status Check: Live verification poller active...</span>
+        </div>
+      </div>
+
+      <!-- Stage C: Admin Rejected State -->
+      <div id="upiRejectedSection" style="display: none; padding: 1.5rem 0.5rem;">
+        <div style="width: 72px; height: 72px; background: #fee2e2; border: 3px solid #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; font-size: 2.2rem; color: #dc2626;">
+          ✕
+        </div>
+        <h3 style="font-size: 1.3rem; font-weight: 800; color: #991b1b; margin: 0 0 0.4rem 0;">
+          Payment Verification Rejected
+        </h3>
+        <p id="upiRejectReasonText" style="font-size: 0.85rem; color: #475569; line-height: 1.5; margin: 0 0 1.25rem 0;">
+          The admin team was unable to verify the transaction in the bank account.
+        </p>
+        <button type="button" id="btnRetryRejectedUpi" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-size: 0.9rem; font-weight: 800; background: #dc2626; border-color: #dc2626; border-radius: 10px;">
+          🔄 Retry Payment
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Centered Professional Order Placed / Success Modal -->
+  <div id="paymentSuccessModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #ffffff; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 100%; max-width: 480px; overflow: hidden; border: 1px solid #e2e8f0; animation: modalPop 0.25s ease-out; text-align: center; padding: 2.25rem 1.75rem; margin: auto;">
+      <!-- Green check indicator -->
+      <div style="width: 72px; height: 72px; background: #ecfdf5; border: 3px solid #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; font-size: 2.4rem; color: #059669; animation: pulseGreen 2s infinite;">
+        ✓
+      </div>
+      <h2 id="successModalTitle" style="color: #065f46; font-size: 1.45rem; font-weight: 800; margin: 0 0 0.4rem 0;">Order Placed Successfully!</h2>
+      <p id="successModalSubtitle" style="color: #475569; font-size: 0.88rem; font-weight: 600; margin: 0 0 1.25rem 0;">
+        Your PharmaTech order has been confirmed.
+      </p>
+
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.88rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span id="lblSuccessAmountLabel" style="color: #64748b;">Amount:</span>
+          <strong id="successPaidAmount" style="color: #059669; font-size: 1.1rem; font-weight: 800;">₹0.00</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span style="color: #64748b;">Order ID:</span>
+          <strong id="successOrderNumber" style="font-family: monospace; color: #1e3a8a;">ORD-0000</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span style="color: #64748b;">Payment Status:</span>
+          <strong id="successPaymentStatus" style="font-family: monospace; color: #059669; font-size: 0.85rem;">CONFIRMED</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+          <span style="color: #64748b;">Dispensing Pharmacy:</span>
+          <strong id="successPharmacyName" style="color: #047857;">Apollo Pharmacy</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px dashed #e2e8f0;">
+          <span style="color: #64748b;">Estimated Delivery Time:</span>
+          <strong id="successDeliveryEst" style="color: #b45309; font-weight: 700;">25-35 mins (Express Doorstep Delivery)</strong>
+        </div>
+      </div>
+
+      <!-- Track Order button -->
+      <button type="button" id="btnTrackSuccessOrder" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem; font-weight: 800; border-radius: 10px; background: #059669; border-color: #059669; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);">
+        📍 Track Order →
+      </button>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Form elements
+      const custFullName = document.getElementById('custFullName');
+      const custPhoneNumber = document.getElementById('custPhoneNumber');
+      const custDeliveryAddress = document.getElementById('custDeliveryAddress');
+      const custCity = document.getElementById('custCity');
+      const custPincode = document.getElementById('custPincode');
+      const lblCoordinates = document.getElementById('lblCoordinates');
+      const btnUseGpsLocation = document.getElementById('btnUseGpsLocation');
+
+      // Priority radio & cards
+      const cardPriorityNormal = document.getElementById('cardPriorityNormal');
+      const cardPriorityEmergency = document.getElementById('cardPriorityEmergency');
+      const radioPriorityNormal = cardPriorityNormal.querySelector('input');
+      const radioPriorityEmergency = cardPriorityEmergency.querySelector('input');
+
+      // Payment Option Elements
+      const optPaymentCOD = document.getElementById('optPaymentCOD');
+      const optPaymentUPI = document.getElementById('optPaymentUPI');
+      const upiPaymentDetailsCard = document.getElementById('upiPaymentDetailsCard');
+      const upiCardPharmacyName = document.getElementById('upiCardPharmacyName');
+      const upiCardPayableAmount = document.getElementById('upiCardPayableAmount');
+      const radioCOD = optPaymentCOD ? optPaymentCOD.querySelector('input') : null;
+      const radioUPI = optPaymentUPI ? optPaymentUPI.querySelector('input') : null;
+
+      // Summary & Breakdown
+      const summaryPharmacyName = document.getElementById('summaryPharmacyName');
+      const summaryPharmacyAddress = document.getElementById('summaryPharmacyAddress');
+      const checkoutCartItemsList = document.getElementById('checkoutCartItemsList');
+      const lblSubtotal = document.getElementById('lblSubtotal');
+      const lblDeliveryFeeDesc = document.getElementById('lblDeliveryFeeDesc');
+      const lblDeliveryFee = document.getElementById('lblDeliveryFee');
+      const lblTaxAmount = document.getElementById('lblTaxAmount');
+      const lblGrandTotal = document.getElementById('lblGrandTotal');
+      const btnPlaceOrder = document.getElementById('btnPlaceOrder');
+
+      // State
+      let cart = API.getCart();
+      if (!cart || cart.length === 0) {
+        alert('Your cart is empty. Redirecting to home...');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      let currentLat = 12.9784;
+      let currentLng = 77.6408;
+      let map = null;
+      let marker = null;
+      let selectedPriority = 'NORMAL';
+      let selectedPaymentMethod = null; // No preselection; customer must select manually
+      let upiTimerInterval = null;
+      let upiPollerInterval = null;
+      let activeUpiOrderId = null;
+      let isScreenshotSubmitted = false;
+
+      // Enforce mandatory Customer authentication
+      const user = API.getUserSession();
+      if (!user || user.role !== 'ROLE_CUSTOMER') {
+        window.location.href = 'customer-login.html?returnUrl=checkout.html';
+        return;
+      }
+
+      if (user.fullName) custFullName.value = user.fullName;
+      if (user.phoneNumber) custPhoneNumber.value = user.phoneNumber;
+
+      // Load saved location
+      const savedLoc = API.getUserLocation();
+      if (savedLoc) {
+        if (savedLoc.latitude) currentLat = savedLoc.latitude;
+        if (savedLoc.longitude) currentLng = savedLoc.longitude;
+        if (savedLoc.area || savedLoc.locality) custDeliveryAddress.value = `${savedLoc.area || savedLoc.locality}, ${savedLoc.city || ''}`;
+        if (savedLoc.city) custCity.value = savedLoc.city;
+        if (savedLoc.pincode) custPincode.value = savedLoc.pincode;
+      }
+      lblCoordinates.textContent = `${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`;
+
+      // Initialize Interactive Leaflet Map Picker
+      function initMapPicker(lat, lng) {
+        const container = document.getElementById('mapPickerContainer');
+        if (!container) return;
+
+        if (map) {
+          map.setView([lat, lng], 15);
+          if (marker) marker.setLatLng([lat, lng]);
+          return;
+        }
+
+        map = L.map('mapPickerContainer').setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+        marker.on('dragend', (e) => {
+          const pos = e.target.getLatLng();
+          currentLat = pos.lat;
+          currentLng = pos.lng;
+          lblCoordinates.textContent = `${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`;
+        });
+      }
+
+      setTimeout(() => initMapPicker(currentLat, currentLng), 300);
+
+      // GPS Button Click
+      if (btnUseGpsLocation) {
+        btnUseGpsLocation.addEventListener('click', () => {
+          if ('geolocation' in navigator) {
+            btnUseGpsLocation.textContent = 'Locating...';
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                currentLat = pos.coords.latitude;
+                currentLng = pos.coords.longitude;
+                lblCoordinates.textContent = `${currentLat.toFixed(4)}, ${currentLng.toFixed(4)}`;
+                initMapPicker(currentLat, currentLng);
+                btnUseGpsLocation.textContent = '✓ GPS Resolved';
+                setTimeout(() => btnUseGpsLocation.textContent = '🎯 Use My GPS Location', 2000);
+              },
+              (err) => {
+                alert('Could not access GPS location. Please drag the pin on the map instead.');
+                btnUseGpsLocation.textContent = '🎯 Use My GPS Location';
+              },
+              { timeout: 8000 }
+            );
+          } else {
+            alert('Geolocation is not supported by your browser.');
+          }
+        });
+      }
+
+      // Priority Toggles
+      radioPriorityNormal.addEventListener('change', () => {
+        selectedPriority = 'NORMAL';
+        cardPriorityNormal.className = 'priority-card active-normal';
+        cardPriorityEmergency.className = 'priority-card';
+        lblDeliveryFeeDesc.textContent = 'Standard Delivery Fee';
+        recalculateTotals();
+      });
+
+      radioPriorityEmergency.addEventListener('change', () => {
+        selectedPriority = 'EMERGENCY';
+        cardPriorityEmergency.className = 'priority-card active-emergency';
+        cardPriorityNormal.className = 'priority-card';
+        lblDeliveryFeeDesc.textContent = '🚨 Emergency Priority Dispatch';
+        recalculateTotals();
+      });
+
+      // Payment Selection Toggles (Manual Selection Required)
+      if (radioCOD) {
+        radioCOD.addEventListener('change', () => {
+          selectedPaymentMethod = 'COD';
+          optPaymentCOD.classList.add('selected');
+          if (optPaymentUPI) optPaymentUPI.classList.remove('selected');
+          if (upiPaymentDetailsCard) upiPaymentDetailsCard.style.display = 'none';
+          btnPlaceOrder.textContent = '📦 Place Order (Pay on Delivery) →';
+        });
+      }
+
+      if (radioUPI) {
+        radioUPI.addEventListener('change', () => {
+          selectedPaymentMethod = 'UPI';
+          optPaymentUPI.classList.add('selected');
+          if (optPaymentCOD) optPaymentCOD.classList.remove('selected');
+          const grandTotal = getCalculatedGrandTotal();
+          if (upiPaymentDetailsCard) {
+            upiPaymentDetailsCard.style.display = 'block';
+            if (summaryPharmacyName && upiCardPharmacyName) {
+              upiCardPharmacyName.textContent = summaryPharmacyName.textContent;
+            }
+            if (upiCardPayableAmount) {
+              upiCardPayableAmount.textContent = `₹${grandTotal.toFixed(2)}`;
+            }
+          }
+          btnPlaceOrder.textContent = `⚡ Proceed to Pay ₹${grandTotal.toFixed(2)} via UPI →`;
+        });
+      }
+
+      // Render Summary Cart Items & Totals
+      function renderCartItems() {
+        if (!cart || cart.length === 0) return;
+        
+        const firstItem = cart[0];
+        if (firstItem.pharmacyName) {
+          summaryPharmacyName.textContent = firstItem.pharmacyName;
+          if (upiCardPharmacyName) upiCardPharmacyName.textContent = firstItem.pharmacyName;
+        }
+
+        checkoutCartItemsList.innerHTML = cart.map(item => `
+          <div class="cart-summary-item">
+            <div>
+              <strong style="color: var(--text-main); font-size: 0.88rem; display: block;">${escapeHtml(item.name || item.medicineName)}</strong>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">${item.brand || ''} • Qty: ${item.quantity}</span>
+            </div>
+            <div style="text-align: right;">
+              <strong style="font-size: 0.95rem; color: #059669;">₹${(item.price * item.quantity).toFixed(2)}</strong>
+              <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">₹${Number(item.price).toFixed(2)} / unit</span>
+            </div>
+          </div>
+        `).join('');
+
+        recalculateTotals();
+      }
+
+      function getCalculatedGrandTotal() {
+        const subtotal = cart.reduce((acc, it) => acc + (Number(it.price) * it.quantity), 0);
+        const deliveryFee = (selectedPriority === 'EMERGENCY') ? 75.00 : 45.00;
+        const tax = subtotal * 0.05;
+        return subtotal + deliveryFee + tax;
+      }
+
+      function recalculateTotals() {
+        const subtotal = cart.reduce((acc, it) => acc + (Number(it.price) * it.quantity), 0);
+        const deliveryFee = (selectedPriority === 'EMERGENCY') ? 75.00 : 45.00;
+        const tax = subtotal * 0.05;
+        const grandTotal = subtotal + deliveryFee + tax;
+
+        lblSubtotal.textContent = `₹${subtotal.toFixed(2)}`;
+        lblDeliveryFee.textContent = `₹${deliveryFee.toFixed(2)}`;
+        lblTaxAmount.textContent = `₹${tax.toFixed(2)}`;
+        lblGrandTotal.textContent = `₹${grandTotal.toFixed(2)}`;
+
+        if (upiCardPayableAmount) {
+          upiCardPayableAmount.textContent = `₹${grandTotal.toFixed(2)}`;
+        }
+
+        if (selectedPaymentMethod === 'UPI') {
+          btnPlaceOrder.textContent = `⚡ Proceed to Pay ₹${grandTotal.toFixed(2)} via UPI →`;
+        } else if (selectedPaymentMethod === 'COD') {
+          btnPlaceOrder.textContent = '📦 Place Order (Pay on Delivery) →';
+        }
+      }
+
+      renderCartItems();
+
+      // Modal Elements for UPI Payment
+      const upiPaymentModal = document.getElementById('upiPaymentModal');
+      const upiQrFormSection = document.getElementById('upiQrFormSection');
+      const upiWaitingSection = document.getElementById('upiWaitingSection');
+      const upiRejectedSection = document.getElementById('upiRejectedSection');
+      const upiCountdownTimer = document.getElementById('upiCountdownTimer');
+      const modalOrderNumber = document.getElementById('modalOrderNumber');
+      const modalPharmacyName = document.getElementById('modalPharmacyName');
+      const modalMerchantUpi = document.getElementById('modalMerchantUpi');
+      const modalPayableAmount = document.getElementById('modalPayableAmount');
+      const modalQrCodeImg = document.getElementById('modalQrCodeImg');
+      const modalScreenshotInput = document.getElementById('modalScreenshotInput');
+      const modalScreenshotPreview = document.getElementById('modalScreenshotPreview');
+      const imgScreenshotThumb = document.getElementById('imgScreenshotThumb');
+      const modalUtrInput = document.getElementById('modalUtrInput');
+      const btnSubmitScreenshot = document.getElementById('btnSubmitScreenshot');
+      const modalTimerExpiredAlert = document.getElementById('modalTimerExpiredAlert');
+      const btnCloseUpiModal = document.getElementById('btnCloseUpiModal');
+      const btnRetryExpiredSession = document.getElementById('btnRetryExpiredSession');
+      const btnRetryRejectedUpi = document.getElementById('btnRetryRejectedUpi');
+      const waitingOrderNumber = document.getElementById('waitingOrderNumber');
+      const upiRejectReasonText = document.getElementById('upiRejectReasonText');
+
+      // Success Modal Elements
+      const paymentSuccessModal = document.getElementById('paymentSuccessModal');
+      const successModalTitle = document.getElementById('successModalTitle');
+      const successModalSubtitle = document.getElementById('successModalSubtitle');
+      const lblSuccessAmountLabel = document.getElementById('lblSuccessAmountLabel');
+      const successPaidAmount = document.getElementById('successPaidAmount');
+      const successOrderNumber = document.getElementById('successOrderNumber');
+      const successPaymentStatus = document.getElementById('successPaymentStatus');
+      const successPharmacyName = document.getElementById('successPharmacyName');
+      const successDeliveryEst = document.getElementById('successDeliveryEst');
+      const btnTrackSuccessOrder = document.getElementById('btnTrackSuccessOrder');
+
+      // Image Preview on file selection
+      modalScreenshotInput.addEventListener('change', () => {
+        const file = modalScreenshotInput.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            imgScreenshotThumb.src = e.target.result;
+            modalScreenshotPreview.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        } else {
+          modalScreenshotPreview.style.display = 'none';
+        }
+      });
+
+      // 5-Minute Timer Implementation
+      function startUpiTimer(seconds) {
+        clearInterval(upiTimerInterval);
+        let rem = seconds;
+
+        function updateDisplay() {
+          const m = Math.floor(rem / 60);
+          const s = rem % 60;
+          upiCountdownTimer.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          
+          if (rem <= 60) {
+            upiCountdownTimer.style.color = '#dc2626';
+          } else {
+            upiCountdownTimer.style.color = '#b45309';
+          }
+
+          if (rem <= 0) {
+            clearInterval(upiTimerInterval);
+            if (!isScreenshotSubmitted) {
+              modalScreenshotInput.disabled = true;
+              btnSubmitScreenshot.disabled = true;
+              modalTimerExpiredAlert.style.display = 'block';
+            }
+          }
+          rem--;
+        }
+
+        updateDisplay();
+        upiTimerInterval = setInterval(updateDisplay, 1000);
+      }
+
+      // Verification Poller
+      function startVerificationPoller(orderId, grandTotal, createdOrder) {
+        clearInterval(upiPollerInterval);
+        upiPollerInterval = setInterval(async () => {
+          try {
+            const statusRes = await API.getPaymentVerificationStatus(orderId);
+            const data = statusRes.data;
+
+            if (data.paymentApprovalStatus === 'APPROVED') {
+              clearInterval(upiPollerInterval);
+              clearInterval(upiTimerInterval);
+              upiPaymentModal.style.display = 'none';
+
+              // Show Order Placed Successfully Modal
+              API.clearCart();
+              successModalTitle.textContent = 'Order Placed Successfully!';
+              successModalSubtitle.textContent = 'Payment Verified & Order Confirmed! Your order has been sent to the pharmacy.';
+              lblSuccessAmountLabel.textContent = 'Amount Paid:';
+              successPaidAmount.textContent = `₹${grandTotal.toFixed(2)}`;
+              successOrderNumber.textContent = data.orderNumber || createdOrder.orderNumber;
+              successPaymentStatus.textContent = 'PAID (Admin Verified)';
+              successPaymentStatus.style.color = '#059669';
+              successPharmacyName.textContent = data.pharmacyName || createdOrder.pharmacyName || summaryPharmacyName.textContent;
+              successDeliveryEst.textContent = '25-35 mins (Express Doorstep Delivery)';
+
+              btnTrackSuccessOrder.onclick = () => {
+                window.location.href = `order-tracking.html?orderId=${orderId}&orderNumber=${data.orderNumber || createdOrder.orderNumber}`;
+              };
+
+              paymentSuccessModal.style.display = 'flex';
+
+            } else if (data.paymentApprovalStatus === 'REJECTED') {
+              clearInterval(upiPollerInterval);
+              upiWaitingSection.style.display = 'none';
+              upiRejectedSection.style.display = 'block';
+              upiRejectReasonText.textContent = data.paymentRejectReason || 'The payment proof could not be verified against the received bank transaction records.';
+            }
+          } catch (err) {
+            console.warn('Status poller notice:', err.message);
+          }
+        }, 3000);
+      }
+
+      // Renew / Retry Payment Session
+      async function renewUpiSession() {
+        if (!activeUpiOrderId) return;
+        try {
+          await API.retryUpiPayment(activeUpiOrderId);
+          isScreenshotSubmitted = false;
+          modalScreenshotInput.disabled = false;
+          btnSubmitScreenshot.disabled = false;
+          modalScreenshotInput.value = '';
+          modalScreenshotPreview.style.display = 'none';
+          modalUtrInput.value = '';
+          modalTimerExpiredAlert.style.display = 'none';
+          upiRejectedSection.style.display = 'none';
+          upiWaitingSection.style.display = 'none';
+          upiQrFormSection.style.display = 'block';
+          startUpiTimer(300);
+        } catch (err) {
+          alert('Failed to renew session: ' + err.message);
+        }
+      }
+
+      if (btnRetryExpiredSession) btnRetryExpiredSession.addEventListener('click', renewUpiSession);
+      if (btnRetryRejectedUpi) btnRetryRejectedUpi.addEventListener('click', renewUpiSession);
+
+      if (btnCloseUpiModal) {
+        btnCloseUpiModal.addEventListener('click', () => {
+          if (isScreenshotSubmitted) {
+            const proceed = confirm('Your payment screenshot has already been submitted for admin verification. You can track this order under My Orders. Close this window?');
+            if (!proceed) return;
+          }
+          clearInterval(upiTimerInterval);
+          clearInterval(upiPollerInterval);
+          upiPaymentModal.style.display = 'none';
+          btnPlaceOrder.disabled = false;
+          recalculateTotals();
+        });
+      }
+
+      // Submit Screenshot Action
+      btnSubmitScreenshot.addEventListener('click', async () => {
+        const file = modalScreenshotInput.files[0];
+        if (!file) {
+          alert('⚠️ Please select a payment screenshot image before submitting.');
+          return;
+        }
+
+        const utr = modalUtrInput.value.trim();
+        btnSubmitScreenshot.disabled = true;
+        btnSubmitScreenshot.textContent = 'Uploading Screenshot...';
+
+        try {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            const base64 = e.target.result;
+            try {
+              await API.uploadPaymentProof(activeUpiOrderId, base64, file.name, utr);
+              isScreenshotSubmitted = true;
+              btnSubmitScreenshot.disabled = false;
+              btnSubmitScreenshot.textContent = '📤 Submit Payment Screenshot for Verification →';
+
+              // Transition to Waiting State
+              upiQrFormSection.style.display = 'none';
+              upiWaitingSection.style.display = 'block';
+
+              const grandTotal = getCalculatedGrandTotal();
+              startVerificationPoller(activeUpiOrderId, grandTotal, { orderNumber: modalOrderNumber.textContent, pharmacyName: modalPharmacyName.textContent });
+
+            } catch (upErr) {
+              alert('Screenshot upload failed: ' + upErr.message);
+              btnSubmitScreenshot.disabled = false;
+              btnSubmitScreenshot.textContent = '📤 Submit Payment Screenshot for Verification →';
+            }
+          };
+          reader.readAsDataURL(file);
+
+        } catch (err) {
+          alert('File processing error: ' + err.message);
+          btnSubmitScreenshot.disabled = false;
+          btnSubmitScreenshot.textContent = '📤 Submit Payment Screenshot for Verification →';
+        }
+      });
+
+      // Submit Order Execution (COD or UPI)
+      btnPlaceOrder.addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        const name = custFullName.value.trim();
+        const phone = custPhoneNumber.value.trim();
+        const address = custDeliveryAddress.value.trim();
+        const city = custCity.value.trim();
+        const pincode = custPincode.value.trim();
+
+        if (!name || !phone || !address || !city) {
+          alert('Please fill in your name, contact phone, delivery address, and city.');
+          return;
+        }
+
+        // Require manual payment method selection
+        if (!selectedPaymentMethod) {
+          alert('⚠️ Please select a payment method (Cash on Delivery or UPI Payment) to proceed.');
+          return;
+        }
+
+        const firstItem = cart[0];
+        const pharmacyId = firstItem.pharmacyId || 1;
+        const grandTotal = getCalculatedGrandTotal();
+
+        const orderPayload = {
+          customerId: user.userId,
+          pharmacyId: pharmacyId,
+          customerName: name,
+          customerPhone: phone,
+          deliveryAddress: `${address}, ${city} - ${pincode}`,
+          customerLatitude: currentLat,
+          customerLongitude: currentLng,
+          priority: selectedPriority,
+          paymentMethod: selectedPaymentMethod,
+          items: cart.map(it => ({
+            inventoryId: it.inventoryId,
+            quantity: it.quantity
+          }))
+        };
+
+        btnPlaceOrder.disabled = true;
+        btnPlaceOrder.textContent = 'Processing Order...';
+
+        try {
+          if (selectedPaymentMethod === 'COD') {
+            // Cash on Delivery: Order placed immediately with status PENDING_COLLECTION, no prepayment or admin approval required
+            const orderRes = await API.createCustomerOrder(orderPayload);
+            const createdOrder = orderRes.data;
+            API.clearCart();
+
+            // Display "Order Placed Successfully" modal immediately (Requirement 3)
+            successModalTitle.textContent = 'Order Placed Successfully!';
+            successModalSubtitle.textContent = 'Your Cash on Delivery order has been placed and sent to the pharmacy for preparation.';
+            lblSuccessAmountLabel.textContent = 'Amount to Pay on Arrival:';
+            successPaidAmount.textContent = `₹${grandTotal.toFixed(2)}`;
+            successOrderNumber.textContent = createdOrder.orderNumber;
+            successPaymentStatus.textContent = 'Pending Collection (Pay on Delivery)';
+            successPaymentStatus.style.color = '#d97706';
+            successPharmacyName.textContent = createdOrder.pharmacyName || summaryPharmacyName.textContent || 'Apollo Pharmacy';
+            successDeliveryEst.textContent = '25-35 mins (Express Doorstep Delivery)';
+
+            btnTrackSuccessOrder.onclick = () => {
+              window.location.href = `order-tracking.html?orderId=${createdOrder.id}&orderNumber=${createdOrder.orderNumber}`;
+            };
+
+            paymentSuccessModal.style.display = 'flex';
+
+          } else {
+            // UPI Payment: Create Order -> Display Payment QR Code + 5-Minute Countdown Timer + Screenshot Upload Form
+            btnPlaceOrder.textContent = 'Generating UPI Payment QR...';
+            const orderRes = await API.createCustomerOrder(orderPayload);
+            const createdOrder = orderRes.data;
+            activeUpiOrderId = createdOrder.id;
+            isScreenshotSubmitted = false;
+
+            modalOrderNumber.textContent = createdOrder.orderNumber;
+            waitingOrderNumber.textContent = '#' + createdOrder.orderNumber;
+            modalPharmacyName.textContent = createdOrder.pharmacyName || summaryPharmacyName.textContent || 'Apollo Pharmacy';
+            modalMerchantUpi.textContent = 'srrivarshanmr@okaxis';
+            modalPayableAmount.textContent = `₹${grandTotal.toFixed(2)}`;
+
+            // Build dynamic UPI URL linked to exact order amount
+            const upiUri = `upi://pay?pa=srrivarshanmr@okaxis&pn=PharmaTech&am=${grandTotal.toFixed(2)}&cu=INR&tn=Order_${encodeURIComponent(createdOrder.orderNumber)}`;
+            modalQrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(upiUri)}`;
+
+            // Reset modal UI states
+            upiQrFormSection.style.display = 'block';
+            upiWaitingSection.style.display = 'none';
+            upiRejectedSection.style.display = 'none';
+            modalTimerExpiredAlert.style.display = 'none';
+            modalScreenshotInput.disabled = false;
+            btnSubmitScreenshot.disabled = false;
+            modalScreenshotInput.value = '';
+            modalScreenshotPreview.style.display = 'none';
+            modalUtrInput.value = '';
+
+            // Start 5-minute timer
+            startUpiTimer(300);
+
+            // Open Modal
+            upiPaymentModal.style.display = 'flex';
+          }
+
+        } catch (err) {
+          alert('Failed to place order: ' + err.message);
+          btnPlaceOrder.disabled = false;
+          recalculateTotals();
+        }
+      });
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Order Tracking – PharmaTech</title>
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Google Maps JavaScript API with Places and Geometry libraries -->
+  <script src="https://maps.googleapis.com/maps/api/js?libraries=geometry,places"></script>
+  <style>
+    .simulation-banner {
+      grid-column: 1 / -1;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 5px solid #f59e0b;
+      padding: 0.9rem 1.25rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.85rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 0.25rem;
+    }
+    .tracking-page-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .tracking-page-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .tracking-map-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      height: 620px;
+    }
+    #liveTrackingMap {
+      width: 100%;
+      flex: 1;
+      min-height: 400px;
+    }
+    .info-panel-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+    }
+    /* Stepper Styling */
+    .tracking-stepper {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin: 1.5rem 0 2rem 0;
+    }
+    .tracking-stepper::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 15px;
+      right: 15px;
+      height: 4px;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+    .stepper-progress-fill {
+      position: absolute;
+      top: 18px;
+      left: 15px;
+      height: 4px;
+      background: #059669;
+      z-index: 2;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+    .step-item {
+      position: relative;
+      z-index: 3;
+      text-align: center;
+      width: 60px;
+    }
+    .step-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: white;
+      border: 3px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.4rem;
+      font-size: 0.9rem;
+      color: #64748b;
+      font-weight: 800;
+      transition: all 0.3s;
+    }
+    .step-item.active .step-icon {
+      border-color: #059669;
+      background: #059669;
+      color: white;
+      box-shadow: 0 0 0 4px #d1fae5;
+    }
+    .step-item.completed .step-icon {
+      border-color: #059669;
+      background: #059669;
+      color: white;
+    }
+    .step-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      line-height: 1.2;
+    }
+    .step-item.active .step-label {
+      color: #059669;
+    }
+    /* Rider Pulse Icon */
+    .rider-pulse {
+      background: #2563eb;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.4);
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body style="background: #f8fafc;">
+
+  <!-- Header Navigation -->
+  <header style="background: white; border-bottom: 1px solid var(--border-light); padding: 1rem 0; position: sticky; top: 0; z-index: 50;">
+    <div class="header-container" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+      <a href="index.html" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+        <span style="font-size: 1.6rem;">💊</span>
+        <div>
+          <span style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -0.5px;">PharmaTech</span>
+          <span style="font-size: 0.7rem; display: block; color: var(--text-muted); font-weight: 600;">LIVE DISPATCH TRACKING</span>
+        </div>
+      </a>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <input type="text" id="inpSearchAnotherOrder" class="form-input" placeholder="Search order number..." style="font-size: 0.85rem; padding: 0.4rem 0.75rem; width: 190px;">
+        <button id="btnSearchAnotherOrder" class="btn btn-outline-primary" style="font-size: 0.82rem; padding: 0.45rem 0.8rem;">
+          Track
+        </button>
+        <a href="index.html" class="btn btn-primary" style="font-size: 0.82rem; padding: 0.45rem 0.8rem;">
+          Home
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Tracking Dashboard -->
+  <div class="tracking-page-container">
+
+    <!-- PROMINENT SIMULATION DIRECTIVE BANNER (Requirement 2) -->
+    <div class="simulation-banner">
+      <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+        <span style="font-size: 1.6rem; line-height: 1;">⚠️</span>
+        <div>
+          <strong style="color: #92400e; font-size: 0.95rem; display: block;">
+            SIMULATED LIVE DELIVERY TRACKING (DEMO MODE)
+          </strong>
+          <span style="color: #78350f; font-size: 0.82rem; margin-top: 0.2rem; line-height: 1.5; display: block;">
+            Delivery partner movement is currently <strong>simulated along the actual road corridor</strong> from <strong>Shree Lakshmi Medicals, 123, Avinashi Rd, Sitra, Coimbatore</strong> to <strong>Neelambur, Coimbatore</strong> (Doorstep Destination) on Avinashi Road (NH 544). Actual real-time rider GPS tracking will replace this simulation upon physical IoT hardware deployment.
+          </span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+        <span style="background: #fef3c7; color: #92400e; padding: 0.3rem 0.75rem; border-radius: 9999px; font-weight: 800; font-size: 0.75rem; border: 1px solid #fde68a;">
+          📍 SHREE LAKSHMI MEDICALS (SITRA) → NEELAMBUR (7.1 km)
+        </span>
+        <button type="button" id="btnPauseSim" class="btn btn-outline-primary" style="font-size: 0.78rem; padding: 0.35rem 0.65rem; border-color: #f59e0b; color: #b45309;">
+          ⏸️ Pause
+        </button>
+        <button type="button" id="btnRestartSim" class="btn btn-outline-primary" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; border-color: #f59e0b; color: #b45309;" title="Restart trip simulation from SITRA">
+          🔄 Restart Simulation (7.1 km)
+        </button>
+        <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; color: #78350f; font-weight: 700;">
+          <span>Pace:</span>
+          <select id="simSpeedSelect" style="padding: 0.25rem 0.4rem; border-radius: 4px; border: 1px solid #fde68a; background: #fff; font-size: 0.75rem; font-weight: 700; color: #92400e; cursor: pointer;">
+            <option value="1" selected>Realistic (~15 km/h)</option>
+            <option value="2">2x Speed</option>
+            <option value="4">4x Fast</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEFT: Interactive GPS Map -->
+    <div class="tracking-map-card">
+      <div style="padding: 1rem 1.25rem; background: white; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Tracking Order:</span>
+          <h2 id="lblOrderNumber" style="font-size: 1.25rem; font-weight: 800; color: var(--primary-dark); margin: 0;">ORD-LOADING</h2>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span id="badgeDemoOrder" style="display: none; background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; border: 1px solid #fde68a;">
+            🎓 DEMO ORDER (DEMO_PAID)
+          </span>
+          <span id="badgePriority" style="background: #eff6ff; color: #1d4ed8; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 800;">
+            STANDARD
+          </span>
+          <span id="badgeEta" style="background: #ecfdf5; color: #047857; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 800; border: 1px solid #a7f3d0;">
+            ⚡ ETA: Calculating...
+          </span>
+        </div>
+      </div>
+
+      <!-- Map Display Container -->
+      <div id="liveTrackingMap"></div>
+
+      <!-- Map Footer Legend -->
+      <div style="padding: 0.75rem 1.25rem; background: #f8fafc; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+          <span>🟢 <strong>Shree Lakshmi Medicals (SITRA):</strong> Pickup (7.1 km)</span>
+          <span>🛵 <strong>Delivery Partner:</strong> Moving along road (~15 km/h)</span>
+          <span>🔴 <strong>Neelambur:</strong> Dropoff</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-weight: 700; color: #2563eb;">Distance Remaining: <strong id="lblRemainingDistText">7.1 km</strong></span>
+          <span id="lblLiveStreamStatus" style="color: #059669; font-weight: 700;">● Live GPS Stream Active</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Status Stepper, Dispatch Cards, Item Breakdown -->
+    <div>
+
+      <!-- Order Status Stepper Card -->
+      <div class="info-panel-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">
+            Delivery Status
+          </h3>
+          <div style="display: flex; gap: 0.4rem; align-items: center;">
+            <span id="lblPaymentPill" style="font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 9999px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+              PAYMENT
+            </span>
+            <span id="lblStatusPill" class="status-pill status-available" style="font-size: 0.82rem; font-weight: 800;">
+              ORDER_PLACED
+            </span>
+          </div>
+        </div>
+        <p id="lblStatusSubtext" style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Your order has been confirmed and forwarded to the dispensing pharmacy.
+        </p>
+
+        <!-- Stepper -->
+        <div class="tracking-stepper">
+          <div class="stepper-progress-fill" id="stepperProgressFill"></div>
+
+          <div class="step-item" id="step1">
+            <div class="step-icon">1</div>
+            <div class="step-label">Placed</div>
+          </div>
+          <div class="step-item" id="step2">
+            <div class="step-icon">2</div>
+            <div class="step-label">Preparing</div>
+          </div>
+          <div class="step-item" id="step3">
+            <div class="step-icon">3</div>
+            <div class="step-label">Ready</div>
+          </div>
+          <div class="step-item" id="step4">
+            <div class="step-icon">4</div>
+            <div class="step-label">Assigned</div>
+          </div>
+          <div class="step-item" id="step5">
+            <div class="step-icon">5</div>
+            <div class="step-label">On Way</div>
+          </div>
+          <div class="step-item" id="step6">
+            <div class="step-icon">6</div>
+            <div class="step-label">Delivered</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Partner Card -->
+      <div class="info-panel-card" id="riderInfoCard">
+        <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🛵</span> Delivery Partner Details (Simulated GPS)
+        </h4>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <div style="width: 50px; height: 50px; border-radius: 50%; background: #eff6ff; color: #1d4ed8; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+            👨‍✈️
+          </div>
+          <div style="flex: 1;">
+            <strong id="lblRiderName" style="font-size: 1rem; color: var(--text-main); display: block;">Ramesh Kumar</strong>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Vehicle: <strong id="lblRiderVehicle">Electric Scooter (KA-03-EB-4412)</strong></span>
+            <span style="font-size: 0.8rem; color: #059669; font-weight: 700;">⭐ Rating: <span id="lblRiderRating">4.9</span> (Verified Delivery Fleet)</span>
+          </div>
+          <a id="btnCallRider" href="tel:9845099881" class="btn btn-outline-primary" style="font-size: 0.8rem; padding: 0.4rem 0.75rem; text-decoration: none;">
+            📞 Call
+          </a>
+        </div>
+      </div>
+
+      <!-- Dispensing Pharmacy Card (Shree Lakshmi Medicals, SITRA, Coimbatore) -->
+      <div class="info-panel-card">
+        <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🏥</span> Dispatch Pharmacy (Starting Location)
+        </h4>
+        <strong id="lblPharmacyName" style="font-size: 0.95rem; color: var(--text-main); display: block;">Shree Lakshmi Medicals (SITRA Hub)</strong>
+        <span id="lblPharmacyAddress" style="font-size: 0.82rem; color: var(--text-muted); display: block; margin: 0.25rem 0 0.5rem;">123, Avinashi Rd, Sitra, Coimbatore, Tamil Nadu 641014</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;">
+          <span style="color: var(--text-muted);">Contact: <strong id="lblPharmacyPhone">0422-2571234</strong></span>
+          <span style="color: #059669; font-weight: 700;">✓ Verified Store (7.1 km)</span>
+        </div>
+      </div>
+
+      <!-- Destination Card (Neelambur, Coimbatore) -->
+      <div class="info-panel-card">
+        <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🏠</span> Delivery Destination (Dropoff)
+        </h4>
+        <strong id="lblCustomerName" style="font-size: 0.92rem; color: var(--text-main); display: block;">Customer Residence</strong>
+        <span id="lblCustomerAddress" style="font-size: 0.82rem; color: var(--text-muted); display: block; margin: 0.2rem 0;">Neelambur, Avinashi Road, Coimbatore, Tamil Nadu 641062</span>
+        <span style="font-size: 0.8rem; color: #64748b;">Phone: <strong id="lblCustomerPhone">9876543210</strong></span>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Elements
+      const lblOrderNumber = document.getElementById('lblOrderNumber');
+      const badgePriority = document.getElementById('badgePriority');
+      const badgeEta = document.getElementById('badgeEta');
+      const badgeDemoOrder = document.getElementById('badgeDemoOrder');
+      const lblPaymentPill = document.getElementById('lblPaymentPill');
+      const lblStatusPill = document.getElementById('lblStatusPill');
+      const lblStatusSubtext = document.getElementById('lblStatusSubtext');
+      const stepperProgressFill = document.getElementById('stepperProgressFill');
+      const lblRiderName = document.getElementById('lblRiderName');
+      const lblRiderVehicle = document.getElementById('lblRiderVehicle');
+      const lblRiderRating = document.getElementById('lblRiderRating');
+      const btnCallRider = document.getElementById('btnCallRider');
+      const lblPharmacyName = document.getElementById('lblPharmacyName');
+      const lblPharmacyAddress = document.getElementById('lblPharmacyAddress');
+      const lblPharmacyPhone = document.getElementById('lblPharmacyPhone');
+      const lblCustomerName = document.getElementById('lblCustomerName');
+      const lblCustomerAddress = document.getElementById('lblCustomerAddress');
+      const lblCustomerPhone = document.getElementById('lblCustomerPhone');
+      const lblLiveStreamStatus = document.getElementById('lblLiveStreamStatus');
+      const lblRemainingDistText = document.getElementById('lblRemainingDistText');
+      const btnRestartSim = document.getElementById('btnRestartSim');
+
+      const inpSearchAnotherOrder = document.getElementById('inpSearchAnotherOrder');
+      const btnSearchAnotherOrder = document.getElementById('btnSearchAnotherOrder');
+
+      // URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      let orderId = urlParams.get('orderId');
+      let orderNumber = urlParams.get('orderNumber');
+
+      // =====================================================================
+      // 1. COIMBATORE ROAD ROUTE DEFINITION (SITRA -> NEELAMBUR)
+      // =====================================================================
+      const SITRA_COORDS = { lat: 11.0336, lng: 77.0396 };       // Start: Shree Lakshmi Medicals, 123 Avinashi Rd, Sitra
+      const NEELAMBUR_COORDS = { lat: 11.0583, lng: 77.0872 };   // Dest: Neelambur, Coimbatore
+      const TOTAL_ROAD_KM = 7.1; // Actual Google Maps road distance via Avinashi Road (NH 544): 7.1 km
+
+      const COIMBATORE_ROAD_ROUTE = [
+        { lat: 11.0336, lng: 77.0396, label: "Shree Lakshmi Medicals, 123 Avinashi Rd, Sitra" },
+        { lat: 11.0340, lng: 77.0420, label: "Avinashi Road / Civil Aerodrome Post" },
+        { lat: 11.0347, lng: 77.0455, label: "Coimbatore Airport Flyover Road" },
+        { lat: 11.0358, lng: 77.0490, label: "Goldwins West Corridor" },
+        { lat: 11.0370, lng: 77.0522, label: "Goldwins Signal, Avinashi Road" },
+        { lat: 11.0385, lng: 77.0558, label: "KMCH Health City Stretch" },
+        { lat: 11.0402, lng: 77.0592, label: "Chinniyampalayam West Approach" },
+        { lat: 11.0418, lng: 77.0622, label: "Chinniyampalayam Junction" },
+        { lat: 11.0435, lng: 77.0658, label: "Avinashi Expressway Toll Plaza Access" },
+        { lat: 11.0455, lng: 77.0695, label: "Tollgate Bypass Corridor" },
+        { lat: 11.0482, lng: 77.0732, label: "Venkitapuram Highway Corridor" },
+        { lat: 11.0512, lng: 77.0772, label: "Decathlon Coimbatore Entrance" },
+        { lat: 11.0538, lng: 77.0805, label: "Neelambur Radial Approach" },
+        { lat: 11.0560, lng: 77.0838, label: "PSG iTech Highway Junction" },
+        { lat: 11.0574, lng: 77.0858, label: "Neelambur Roundabout / Bypass" },
+        { lat: 11.0583, lng: 77.0872, label: "Neelambur Delivery Destination, Coimbatore" }
+      ];
+
+      // Route Interpolator along actual road segment points
+      function getRoutePointAtProgress(pct) {
+        const p = Math.max(0, Math.min(100, pct));
+        const segments = COIMBATORE_ROAD_ROUTE.length - 1;
+        const raw = (p / 100) * segments;
+        const idx = Math.floor(raw);
+        const frac = raw - idx;
+
+        if (idx >= segments) {
+          return { ...COIMBATORE_ROAD_ROUTE[segments], pct: 100 };
+        }
+
+        const p1 = COIMBATORE_ROAD_ROUTE[idx];
+        const p2 = COIMBATORE_ROAD_ROUTE[idx + 1];
+
+        return {
+          lat: p1.lat + (p2.lat - p1.lat) * frac,
+          lng: p1.lng + (p2.lng - p1.lng) * frac,
+          label: frac > 0.5 ? p2.label : p1.label,
+          pct: p
+        };
+      }
+
+      // =====================================================================
+      // 2. STATE PERSISTENCE (Survives Refresh and Reopening My Orders)
+      // =====================================================================
+      function getSimStorageKey() {
+        return `pharmatech_sim_tracking_${orderNumber || orderId || 'active'}`;
+      }
+
+      function loadSimProgress() {
+        try {
+          const raw = localStorage.getItem(getSimStorageKey());
+          if (raw) {
+            const data = JSON.parse(raw);
+            if (typeof data.progress === 'number') {
+              const now = Date.now();
+              const elapsedSec = (now - (data.lastUpdated || now)) / 1000;
+              // Smooth, gentle advance for elapsed time without jumping
+              if (data.progress < 100 && elapsedSec > 2) {
+                const advance = Math.min(1.5, elapsedSec * 0.02);
+                data.progress = Math.min(100, data.progress + advance);
+              }
+              return data.progress;
+            }
+          }
+        } catch (e) {}
+        return 0.0; // Start at 0% (pickup at Shree Lakshmi Medicals, SITRA)
+      }
+
+      function saveSimProgress(p) {
+        try {
+          localStorage.setItem(getSimStorageKey(), JSON.stringify({
+            progress: p,
+            lastUpdated: Date.now()
+          }));
+        } catch (e) {}
+      }
+
+      // =====================================================================
+      // 3. DUAL MAP ENGINE: GOOGLE MAPS WITH LEAFLET FALLBACK
+      // =====================================================================
+      let isGoogleMapsActive = false;
+      let googleMap = null;
+      let googleRiderMarker = null;
+
+      let leafletMap = null;
+      let leafletRiderMarker = null;
+
+      function initMapEngine() {
+        const mapContainer = document.getElementById('liveTrackingMap');
+        if (!mapContainer) return;
+
+        // Try Google Maps first
+        if (window.google && window.google.maps && window.google.maps.Map) {
+          try {
+            googleMap = new google.maps.Map(mapContainer, {
+              center: { lat: 11.0460, lng: 77.0634 },
+              zoom: 13,
+              mapTypeId: 'roadmap',
+              mapTypeControl: false,
+              streetViewControl: false,
+              fullscreenControl: true
+            });
+
+            // Directions Service on Google Maps
+            if (google.maps.DirectionsService) {
+              const directionsService = new google.maps.DirectionsService();
+              directionsService.route({
+                origin: SITRA_COORDS,
+                destination: NEELAMBUR_COORDS,
+                travelMode: google.maps.TravelMode.DRIVING
+              }, (res, status) => {
+                if (status === 'OK' && res) {
+                  new google.maps.DirectionsRenderer({
+                    map: googleMap,
+                    directions: res,
+                    suppressMarkers: true,
+                    polylineOptions: { strokeColor: '#2563eb', strokeWeight: 5, strokeOpacity: 0.85 }
+                  });
+                } else {
+                  new google.maps.Polyline({
+                    path: COIMBATORE_ROAD_ROUTE,
+                    map: googleMap,
+                    strokeColor: '#2563eb',
+                    strokeWeight: 5,
+                    strokeOpacity: 0.85
+                  });
+                }
+              });
+            } else {
+              new google.maps.Polyline({
+                path: COIMBATORE_ROAD_ROUTE,
+                map: googleMap,
+                strokeColor: '#2563eb',
+                strokeWeight: 5,
+                strokeOpacity: 0.85
+              });
+            }
+
+            // Shree Lakshmi Medicals SITRA Marker
+            new google.maps.Marker({
+              position: SITRA_COORDS,
+              map: googleMap,
+              title: "Pickup Hub: Shree Lakshmi Medicals, 123 Avinashi Rd, Sitra, Coimbatore (7.1 km to Neelambur)",
+              label: { text: "🏥", fontSize: "16px" }
+            });
+
+            // Neelambur Destination Marker
+            new google.maps.Marker({
+              position: NEELAMBUR_COORDS,
+              map: googleMap,
+              title: "Doorstep Destination: Neelambur, Coimbatore",
+              label: { text: "🏠", fontSize: "16px" }
+            });
+
+            // Delivery Partner Marker
+            googleRiderMarker = new google.maps.Marker({
+              position: SITRA_COORDS,
+              map: googleMap,
+              title: "Delivery Partner (Simulated Movement ~15 km/h)",
+              label: { text: "🛵", fontSize: "20px" }
+            });
+
+            isGoogleMapsActive = true;
+            lblLiveStreamStatus.textContent = '● Google Maps Live Stream Active (Shree Lakshmi Medicals, SITRA → Neelambur 7.1 km)';
+            return;
+          } catch (e) {
+            console.warn('Google Maps error, falling back to Leaflet:', e);
+          }
+        }
+
+        // Leaflet Fallback Engine
+        leafletMap = L.map('liveTrackingMap').setView([11.0460, 77.0634], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(leafletMap);
+
+        // Shree Lakshmi Medicals SITRA Pharmacy pin
+        const pharmIcon = L.divIcon({
+          className: 'custom-pharm-pin',
+          html: `<div style="background: #059669; color: white; width: 34px; height: 34px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 16px;">🏥</div>`,
+          iconSize: [34, 34]
+        });
+        L.marker([SITRA_COORDS.lat, SITRA_COORDS.lng], { icon: pharmIcon })
+          .addTo(leafletMap)
+          .bindPopup(`<b>Shree Lakshmi Medicals</b><br>123, Avinashi Rd, Sitra, Coimbatore<br><small style="color: #059669; font-weight: 700;">7.1 km route to Neelambur</small>`);
+
+        // Neelambur Destination pin
+        const custIcon = L.divIcon({
+          className: 'custom-cust-pin',
+          html: `<div style="background: #dc2626; color: white; width: 34px; height: 34px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 16px;">🏠</div>`,
+          iconSize: [34, 34]
+        });
+        L.marker([NEELAMBUR_COORDS.lat, NEELAMBUR_COORDS.lng], { icon: custIcon })
+          .addTo(leafletMap)
+          .bindPopup(`<b>Delivery Destination</b><br>Neelambur, Avinashi Road, Coimbatore`);
+
+        // Draw Road Polyline
+        const polyPoints = COIMBATORE_ROAD_ROUTE.map(pt => [pt.lat, pt.lng]);
+        const poly = L.polyline(polyPoints, { color: '#2563eb', weight: 5, opacity: 0.85, dashArray: '6, 8' }).addTo(leafletMap);
+        leafletMap.fitBounds(poly.getBounds(), { padding: [40, 40] });
+
+        // Moving Rider Marker
+        const riderIcon = L.divIcon({
+          className: 'custom-rider-pin',
+          html: `<div class="rider-pulse">🛵</div>`,
+          iconSize: [30, 30]
+        });
+        leafletRiderMarker = L.marker([SITRA_COORDS.lat, SITRA_COORDS.lng], { icon: riderIcon })
+          .addTo(leafletMap)
+          .bindPopup(`<b>Delivery Partner (Simulated)</b><br>Moving leisurely on Avinashi Road (~15 km/h)`);
+
+        lblLiveStreamStatus.textContent = '● Road Route GPS Stream Active (Shree Lakshmi Medicals, SITRA → Neelambur 7.1 km)';
+      }
+
+      function updateRiderMarkerOnMap(lat, lng, label) {
+        if (isGoogleMapsActive && googleRiderMarker) {
+          googleRiderMarker.setPosition({ lat, lng });
+          googleRiderMarker.setTitle(`Delivery Partner at ${label}`);
+        } else if (leafletRiderMarker) {
+          leafletRiderMarker.setLatLng([lat, lng]);
+          leafletRiderMarker.setPopupContent(`<b>Delivery Partner (Simulated)</b><br>${escapeHtml(label)}`);
+        }
+      }
+
+      // =====================================================================
+      // 4. SIMULATION PROGRESS CONTROLLER (REALISTIC CALM SPEED)
+      // =====================================================================
+      let currentOrder = null;
+      let currentProgress = loadSimProgress();
+      let simInterval = null;
+      let simSpeedMultiplier = 1;
+      let isSimPaused = false;
+
+      const simSpeedSelect = document.getElementById('simSpeedSelect');
+      const btnPauseSim = document.getElementById('btnPauseSim');
+
+      if (simSpeedSelect) {
+        simSpeedSelect.addEventListener('change', (e) => {
+          simSpeedMultiplier = parseFloat(e.target.value) || 1;
+        });
+      }
+
+      if (btnPauseSim) {
+        btnPauseSim.addEventListener('click', () => {
+          isSimPaused = !isSimPaused;
+          btnPauseSim.textContent = isSimPaused ? '▶️ Resume' : '⏸️ Pause';
+          btnPauseSim.style.background = isSimPaused ? '#fef3c7' : '';
+        });
+      }
+
+      function tickSimulation() {
+        const isRiderAssigned = currentOrder && currentOrder.deliveryPartnerName &&
+          ['PARTNER_ASSIGNED', 'ARRIVED_AT_PHARMACY', 'PICKED_UP', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes((currentOrder.status || '').toUpperCase());
+
+        if (!isRiderAssigned) {
+          // Delivery request has been dispatched to the delivery partner pool, waiting for a delivery person to accept!
+          const st = currentOrder ? (currentOrder.status || 'ORDER_PLACED') : 'ORDER_PLACED';
+          lblStatusPill.textContent = st;
+          lblStatusSubtext.textContent = '⏳ Order broadcasted to delivery partner pool. Waiting for nearby delivery rider to accept...';
+          badgeEta.textContent = '⏳ Awaiting Rider Assignment';
+          badgeEta.style.background = '#fef3c7';
+          badgeEta.style.color = '#92400e';
+          lblLiveStreamStatus.textContent = '📡 Dispatched to Delivery Fleet • Awaiting Rider Acceptance';
+
+          lblRiderName.innerHTML = '<span style="color: #b45309; font-weight: 700;">⏳ Broadcasted to Delivery Pool</span>';
+          lblRiderVehicle.textContent = 'Dispatched to nearby riders. Details will appear once accepted.';
+          lblRiderRating.textContent = 'Unassigned';
+
+          if (currentOrder && currentOrder.pharmacyName) {
+            lblPharmacyName.textContent = currentOrder.pharmacyName;
+            lblPharmacyAddress.textContent = currentOrder.pharmacyAddress || '123, Avinashi Rd, Sitra, Coimbatore';
+            lblPharmacyPhone.textContent = currentOrder.pharmacyPhone || '0422-2571234';
+          }
+          if (currentOrder && currentOrder.deliveryAddress) {
+            lblCustomerAddress.textContent = currentOrder.deliveryAddress;
+          }
+
+          updateStepperUI(st);
+
+          // Park marker at the pickup pharmacy without moving along the road
+          const startPt = getRoutePointAtProgress(0.0);
+          updateRiderMarkerOnMap(startPt.lat, startPt.lng, 'Pickup Hub: Shree Lakshmi Medicals (Awaiting Rider Assignment)');
+          return;
+        }
+
+        // Rider is assigned!
+        lblRiderName.textContent = currentOrder.deliveryPartnerName;
+        lblRiderVehicle.textContent = currentOrder.vehicleNumber || 'Electric Delivery Scooter (TN-38-BZ-2144)';
+        lblRiderRating.textContent = (currentOrder.deliveryPartnerRating ? Number(currentOrder.deliveryPartnerRating).toFixed(1) : '4.9') + ' ★';
+
+        if (!isSimPaused && currentProgress < 100) {
+          // Slow, realistic progress increment: 0.10% per 2 seconds (~15 km/h real-world city scooter delivery speed!)
+          const step = 0.10 * simSpeedMultiplier;
+          currentProgress = Math.min(100, currentProgress + step);
+          saveSimProgress(currentProgress);
+        }
+
+        const point = getRoutePointAtProgress(currentProgress);
+        updateRiderMarkerOnMap(point.lat, point.lng, point.label);
+
+        const remainingKm = Math.max(0, (TOTAL_ROAD_KM * (1 - currentProgress / 100))).toFixed(1);
+        const etaMins = Math.max(1, Math.ceil((remainingKm / 20) * 60) + 2);
+
+        if (lblRemainingDistText) {
+          lblRemainingDistText.textContent = `${remainingKm} km`;
+        }
+
+        // Determine stage and status
+        let statusText = 'OUT_FOR_DELIVERY';
+        let subtext = '';
+
+        if (currentProgress < 10) {
+          statusText = 'PREPARING';
+          subtext = `Rider ${currentOrder.deliveryPartnerName} at ${lblPharmacyName.textContent} • Packaging medicines (${remainingKm} km to destination)`;
+          badgeEta.textContent = `⚡ ETA: ${etaMins} mins (Pickup in progress)`;
+        } else if (currentProgress < 25) {
+          statusText = 'PICKED_UP';
+          subtext = `Package collected by ${currentOrder.deliveryPartnerName} • Commencing delivery on Avinashi Road (${remainingKm} km remaining)`;
+          badgeEta.textContent = `⚡ ETA: ${etaMins} mins (${remainingKm} km remaining)`;
+        } else if (currentProgress < 90) {
+          statusText = 'OUT_FOR_DELIVERY';
+          subtext = `Rider ${currentOrder.deliveryPartnerName} passing ${point.label} on Avinashi Road • Moving leisurely at ~15 km/h towards Neelambur (${remainingKm} km remaining)`;
+          badgeEta.textContent = `⚡ ETA: ${etaMins} mins (${remainingKm} km remaining)`;
+        } else if (currentProgress < 100) {
+          statusText = 'OUT_FOR_DELIVERY';
+          subtext = `Rider ${currentOrder.deliveryPartnerName} entering Neelambur, Coimbatore • Approaching doorstep (< ${remainingKm} km away)`;
+          badgeEta.textContent = `⚡ ETA: Arriving now (< 1 min)`;
+        } else {
+          statusText = 'DELIVERED';
+          subtext = `Order delivered successfully to Neelambur, Coimbatore by ${currentOrder.deliveryPartnerName}! Thank you for choosing Shree Lakshmi Medicals & PharmaTech.`;
+          badgeEta.textContent = `✓ Delivered at Neelambur`;
+          badgeEta.style.background = '#dcfce7';
+          badgeEta.style.color = '#15803d';
+          lblLiveStreamStatus.textContent = '✓ Trip Completed • Delivery Finalized at Neelambur';
+        }
+
+        lblStatusPill.textContent = statusText;
+        lblStatusSubtext.textContent = subtext;
+        updateStepperUI(statusText);
+
+        if (currentOrder && currentOrder.pharmacyName) {
+          lblPharmacyName.textContent = currentOrder.pharmacyName;
+          lblPharmacyAddress.textContent = currentOrder.pharmacyAddress || '123, Avinashi Rd, Sitra, Coimbatore, Tamil Nadu 641014';
+          lblPharmacyPhone.textContent = currentOrder.pharmacyPhone || '0422-2571234';
+        }
+        if (currentOrder && currentOrder.deliveryAddress) {
+          lblCustomerAddress.textContent = currentOrder.deliveryAddress;
+        }
+      }
+
+      // Restart Simulation Button Handler
+      if (btnRestartSim) {
+        btnRestartSim.addEventListener('click', () => {
+          currentProgress = 0.0;
+          saveSimProgress(0.0);
+          tickSimulation();
+        });
+      }
+
+      // =====================================================================
+      // 5. FETCH ORDER METADATA & INITIALIZE
+      // =====================================================================
+      async function fetchAndRenderOrder() {
+        try {
+          let res = null;
+          if (orderId) {
+            res = await API.trackOrder(orderId);
+          } else if (orderNumber) {
+            res = await API.trackOrderByNumber(orderNumber);
+          } else {
+            lblOrderNumber.textContent = 'ORD-2026-COIMBATORE';
+            lblCustomerName.textContent = 'Rahul Sharma';
+            return;
+          }
+
+          if (res && res.data) {
+            currentOrder = res.data;
+            const order = res.data;
+            orderId = order.id;
+            orderNumber = order.orderNumber;
+
+            lblOrderNumber.textContent = order.orderNumber;
+            badgePriority.textContent = order.priority || 'STANDARD';
+            if (order.priority === 'EMERGENCY') {
+              badgePriority.style.background = '#fee2e2';
+              badgePriority.style.color = '#b91c1c';
+            }
+
+            // Payment Status pill
+            if (lblPaymentPill) {
+              const pStatus = (order.paymentStatus || 'PENDING').toUpperCase();
+              if (pStatus === 'PAID' || pStatus === 'TEST_SUCCESS' || pStatus === 'DEMO_PAID') {
+                lblPaymentPill.textContent = '✓ PAID';
+                lblPaymentPill.style.background = '#ecfdf5';
+                lblPaymentPill.style.color = '#047857';
+                lblPaymentPill.style.border = '1px solid #a7f3d0';
+              } else if (pStatus === 'COD_COLLECTED') {
+                lblPaymentPill.textContent = '✓ CASH COLLECTED';
+                lblPaymentPill.style.background = '#ecfdf5';
+                lblPaymentPill.style.color = '#047857';
+                lblPaymentPill.style.border = '1px solid #a7f3d0';
+              } else if (pStatus === 'PENDING_COLLECTION' || pStatus === 'COD_PENDING') {
+                lblPaymentPill.textContent = '💵 Pay on Delivery (Pending)';
+                lblPaymentPill.style.background = '#fef3c7';
+                lblPaymentPill.style.color = '#92400e';
+                lblPaymentPill.style.border = '1px solid #fde68a';
+              } else {
+                lblPaymentPill.textContent = pStatus;
+                lblPaymentPill.style.background = '#f1f5f9';
+                lblPaymentPill.style.color = '#475569';
+                lblPaymentPill.style.border = '1px solid #cbd5e1';
+              }
+            }
+
+            if (order.customerName) lblCustomerName.textContent = order.customerName;
+            if (order.customerPhone) lblCustomerPhone.textContent = order.customerPhone;
+            if (order.pharmacyName) lblPharmacyName.textContent = order.pharmacyName;
+            if (order.pharmacyAddress) lblPharmacyAddress.textContent = order.pharmacyAddress;
+            if (order.pharmacyPhone) lblPharmacyPhone.textContent = order.pharmacyPhone;
+            if (order.deliveryAddress) lblCustomerAddress.textContent = order.deliveryAddress;
+          }
+        } catch (err) {
+          console.warn('Order metadata fetch note:', err);
+        }
+      }
+
+      function updateStepperUI(status) {
+        let activeIdx = 0;
+        if (status === 'ORDER_PLACED') activeIdx = 0;
+        else if (status === 'PHARMACY_ACCEPTED' || status === 'PREPARING') activeIdx = 1;
+        else if (status === 'READY_FOR_PICKUP') activeIdx = 2;
+        else if (status === 'PARTNER_ASSIGNED' || status === 'ARRIVED_AT_PHARMACY') activeIdx = 3;
+        else if (status === 'PICKED_UP' || status === 'OUT_FOR_DELIVERY') activeIdx = 4;
+        else if (status === 'DELIVERED') activeIdx = 5;
+
+        const pct = (activeIdx / 5) * 100;
+        stepperProgressFill.style.width = `${pct}%`;
+
+        for (let i = 0; i < 6; i++) {
+          const el = document.getElementById(`step${i + 1}`);
+          if (!el) continue;
+          if (i < activeIdx) {
+            el.className = 'step-item completed';
+            el.querySelector('.step-icon').textContent = '✓';
+          } else if (i === activeIdx) {
+            el.className = 'step-item active';
+            el.querySelector('.step-icon').textContent = (i + 1);
+          } else {
+            el.className = 'step-item';
+            el.querySelector('.step-icon').textContent = (i + 1);
+          }
+        }
+      }
+
+      // Initialize Map Engine
+      initMapEngine();
+
+      // Fetch Order Data
+      await fetchAndRenderOrder();
+
+      // Initial simulation render
+      tickSimulation();
+
+      // Auto-refresh order data every 3 seconds to immediately detect rider assignment!
+      setInterval(async () => {
+        await fetchAndRenderOrder();
+        tickSimulation();
+      }, 3000);
+
+      // Start Periodic Simulation (Every 2 seconds with slow, realistic movement)
+      simInterval = setInterval(tickSimulation, 2000);
+
+      // Search Another Order
+      btnSearchAnotherOrder.addEventListener('click', () => {
+        const val = inpSearchAnotherOrder.value.trim();
+        if (val) {
+          window.location.href = `order-tracking.html?orderNumber=${encodeURIComponent(val)}`;
+        }
+      });
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pharmacy Management Dashboard – PharmaTech</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'><path d='M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z'/></svg>">
+  <script>
+    (function() {
+      try {
+        var user = JSON.parse(localStorage.getItem('pharmatech_user') || 'null');
+        if (!user || user.role !== 'ROLE_PHARMACY_OWNER') {
+          window.location.replace('pharmacy-login.html');
+        }
+      } catch (e) {
+        window.location.replace('pharmacy-login.html');
+      }
+    })();
+  </script>
+  <style>
+    @keyframes pulseAlert {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .badge-emergency-pulse {
+      background: #ef4444;
+      color: white;
+      font-weight: 800;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      animation: pulseAlert 1.5s infinite;
+      letter-spacing: 0.5px;
+    }
+    .badge-normal-priority {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-header">
+        <a href="index.html" class="sidebar-brand">
+          <div class="brand-icon-box" style="width: 34px; height: 34px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+            </svg>
+          </div>
+          <span>Pharma<span style="color: var(--primary);">Tech</span></span>
+        </a>
+      </div>
+
+      <!-- Sidebar Navigation Items -->
+      <ul class="sidebar-nav">
+        <li>
+          <a class="nav-item-link active" data-view="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard Overview</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="inventory">
+            <span class="nav-icon">📦</span>
+            <span class="nav-label">Inventory Management</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="invoice">
+            <span class="nav-icon">🧾</span>
+            <span class="nav-label">Upload Purchase Invoice</span>
+            <span class="sidebar-badge badge-active-plan" style="background: #dcfce7; color: #15803d;">Live</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="purchase-history">
+            <span class="nav-icon">📁</span>
+            <span class="nav-label">Purchase History</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="billing">
+            <span class="nav-icon">💳</span>
+            <span class="nav-label">Billing / POS</span>
+            <span class="sidebar-badge badge-active-plan" style="background: #dcfce7; color: #15803d;">Live</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="sales-history">
+            <span class="nav-icon">📑</span>
+            <span class="nav-label">Sales History</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="orders">
+            <span class="nav-icon">🛍️</span>
+            <span class="nav-label">Orders & Dispatch</span>
+            <span class="sidebar-badge badge-active-plan" style="background: #e0f2fe; color: #0369a1;">Fleet</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="earnings" id="navPharmacyEarnings">
+            <span class="nav-icon">💰</span>
+            <span class="nav-label">Earnings & Settlements</span>
+            <span class="sidebar-badge badge-active-plan" style="background: #ecfdf5; color: #065f46;">Auto</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="reports">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">Reports & Alerts</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="subscription">
+            <span class="nav-icon">⭐</span>
+            <span class="nav-label">Subscription</span>
+            <span class="sidebar-badge badge-active-plan">₹200/mo</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="profile">
+            <span class="nav-icon">🏥</span>
+            <span class="nav-label">Profile</span>
+          </a>
+        </li>
+        <li style="margin-top: auto;">
+          <a class="nav-item-link" id="logoutOwnerBtn" style="color: #ef4444;">
+            <span class="nav-icon">🚪</span>
+            <span class="nav-label">Logout</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="owner-mini-card">
+          <div class="owner-avatar">Rx</div>
+          <div class="owner-details">
+            <h5 class="owner-name-display">Dr. Vikram Patel</h5>
+            <p class="pharmacy-name-display">Apollo Pharmacy Metro</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="dashboard-main">
+      
+      <!-- Top Bar -->
+      <header class="dashboard-topbar">
+        <div class="topbar-left">
+          <h2 class="pharmacy-name-display">Pharmacy Partner Dashboard</h2>
+          <p>Logged in as: <strong class="owner-name-display">Owner</strong> • <span class="owner-email-display">owner@example.com</span></p>
+        </div>
+        <div class="topbar-right" style="display: flex; align-items: center; gap: 1rem;">
+          <!-- Order Notification Bell with Unread Badge -->
+          <div style="position: relative;">
+            <button id="notifBellBtn" class="btn" style="background: white; border: 1px solid #cbd5e1; border-radius: 9999px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer;" title="Customer Order Notifications">
+              <span style="font-size: 1.25rem;">🔔</span>
+              <span id="pharmacyNotifBadge" style="position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; border-radius: 9999px; font-size: 0.72rem; font-weight: 800; padding: 2px 6px; display: none; box-shadow: 0 2px 4px rgba(239,68,68,0.4);">0</span>
+            </button>
+
+            <!-- Notification Dropdown -->
+            <div id="pharmacyNotifDropdown" style="display: none; position: absolute; right: 0; top: 50px; width: 360px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; z-index: 1000; padding: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 0.75rem;">
+                <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #0f172a;">Incoming Customer Orders</h4>
+                <span id="notifDropdownCount" style="font-size: 0.75rem; color: #64748b;">0 unread</span>
+              </div>
+              <div id="pharmacyNotifList" style="max-height: 280px; overflow-y: auto;">
+                <p style="font-size: 0.85rem; color: #94a3b8; text-align: center; margin: 1rem 0;">No pending order alerts</p>
+              </div>
+            </div>
+          </div>
+
+          <span class="store-status-pill">
+            <span class="status-dot"></span>
+            Store Verified & Live
+          </span>
+        </div>
+      </header>
+
+      <!-- Dashboard Body -->
+      <main class="dashboard-body">
+
+        <!-- VIEW 1: DASHBOARD OVERVIEW -->
+        <div id="viewDashboard" class="dashboard-view-panel">
+          
+          <!-- 4 Required Summary Metrics Cards -->
+          <div class="metrics-grid">
+            
+            <!-- Card 1: Total Medicines -->
+            <div class="metric-card">
+              <div class="metric-info">
+                <h6>Total Medicines</h6>
+                <div class="metric-value" id="metricTotalMed">0</div>
+              </div>
+              <div class="metric-icon-box icon-emerald">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+              </div>
+            </div>
+
+            <!-- Card 2: Available Medicines -->
+            <div class="metric-card">
+              <div class="metric-info">
+                <h6>Available Medicines</h6>
+                <div class="metric-value" id="metricAvailMed" style="color: #059669;">0</div>
+              </div>
+              <div class="metric-icon-box icon-emerald" style="background: #dcfce7; color: #16a34a;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+            </div>
+
+            <!-- Card 3: Low Stock Medicines -->
+            <div class="metric-card">
+              <div class="metric-info">
+                <h6>Low Stock Medicines</h6>
+                <div class="metric-value" id="metricLowStock" style="color: #d97706;">0</div>
+              </div>
+              <div class="metric-icon-box icon-amber">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              </div>
+            </div>
+
+            <!-- Card 4: Pending Orders -->
+            <div class="metric-card">
+              <div class="metric-info">
+                <h6>Pending Orders</h6>
+                <div class="metric-value" id="metricPendingOrders">0</div>
+              </div>
+              <div class="metric-icon-box icon-blue">
+                <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Quick Action Banners -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.75rem;">
+              <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
+                🚀 Welcome to Your PharmaTech Pharmacy Manager
+              </h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.25rem;">
+                This platform is connected to your Spring Boot REST backend with MySQL database synchronization. You can manage your live medicine stocks, edit pricing, and add new products seamlessly.
+              </p>
+              <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-primary" onclick="document.querySelector('[data-view=inventory]').click();">
+                  Manage Store Inventory →
+                </button>
+                <button class="btn btn-outline-primary" onclick="document.querySelector('[data-view=profile]').click();">
+                  View Store Profile
+                </button>
+              </div>
+            </div>
+
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-lg); padding: 1.5rem;">
+              <h4 style="font-size: 0.95rem; font-weight: 800; color: #166534; margin-bottom: 0.5rem;">
+                Partner Plan Status
+              </h4>
+              <p style="font-size: 0.82rem; color: #15803d; margin-bottom: 0.75rem;">
+                Plan: <strong>PharmaTech Partner Plan</strong><br>
+                Billing: ₹200 / month (Active)<br>
+                Database ID: Synchronized with MySQL
+              </p>
+              <span class="badge" style="background: #22c55e; color: white;">Verified Active</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- VIEW 2: INVENTORY MANAGEMENT (Fully Working CRUD) -->
+        <div id="viewInventory" class="dashboard-view-panel" style="display: none;">
+          <div class="content-card">
+            
+            <div class="card-header-bar">
+              <div>
+                <h3>Medicine Inventory Management</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Manage real-time medicine availability, price, and batch details.</p>
+              </div>
+
+              <div class="inventory-toolbar">
+                <div class="search-box-sm">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                  <input type="text" id="inventorySearchInput" placeholder="Search medicines or batches...">
+                </div>
+                <button class="btn btn-primary" id="openAddModalBtn" style="font-size: 0.85rem; padding: 0.55rem 1rem;">
+                  + Add Medicine
+                </button>
+              </div>
+            </div>
+
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Medicine & Brand</th>
+                    <th>Category</th>
+                    <th>Stock Status</th>
+                    <th>Price</th>
+                    <th>Expiry Date</th>
+                    <th>Batch No</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                  <!-- Dynamically populated rows -->
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- VIEW 3: PROFILE TAB -->
+        <div id="viewProfile" class="dashboard-view-panel" style="display: none;">
+          <div class="content-card">
+            <div class="card-header-bar">
+              <h3>Registered Pharmacy Store Profile</h3>
+              <span class="badge" style="background: #dcfce7; color: #166534;">Verified Drug License</span>
+            </div>
+            <div style="padding: 2rem;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 800px;">
+                <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Pharmacy Name</span>
+                  <h4 id="profStoreName" style="font-size: 1.1rem; color: var(--text-main); margin-top: 0.25rem;">-</h4>
+                </div>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Licensed Pharmacist / Owner</span>
+                  <h4 id="profOwnerName" style="font-size: 1.1rem; color: var(--text-main); margin-top: 0.25rem;">-</h4>
+                </div>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Drug Licence Number</span>
+                  <h4 id="profLicense" style="font-size: 1rem; font-family: monospace; color: var(--primary-dark); margin-top: 0.25rem;">-</h4>
+                </div>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Rating & Trust Score</span>
+                  <h4 id="profRating" style="font-size: 1.1rem; color: #d97706; margin-top: 0.25rem;">★ 4.9</h4>
+                </div>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light); grid-column: 1/-1;">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Store Address</span>
+                  <p id="profAddress" style="font-size: 0.95rem; color: var(--text-main); margin-top: 0.25rem;">-</p>
+                  <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.2rem;">
+                    City: <strong id="profCity">-</strong> • PIN: <strong id="profPincode">-</strong>
+                  </p>
+                </div>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Email</span>
+                  <h4 id="profEmail" style="font-size: 0.95rem; color: var(--text-main); margin-top: 0.25rem;">-</h4>
+                </div>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                  <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Mobile Phone</span>
+                  <h4 id="profPhone" style="font-size: 0.95rem; color: var(--text-main); margin-top: 0.25rem;">-</h4>
+                </div>
+                <div style="background: #f0fdf4; padding: 1rem; border-radius: var(--radius-md); border: 1px solid #86efac; grid-column: 1/-1;">
+                  <span style="font-size: 0.75rem; color: #166534; font-weight: 700; text-transform: uppercase;">Subscription Status</span>
+                  <h4 id="profSubStatus" style="font-size: 1rem; color: #166534; margin-top: 0.25rem;">Active</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: UPLOAD PURCHASE INVOICE (2-Stage Extraction & Confirmation) -->
+        <div id="viewInvoice" class="dashboard-view-panel" style="display: none;">
+          <div class="panel-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Upload Purchase Invoice & Auto-Update Inventory</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted);">Upload supplier invoices in PDF, JPG, JPEG, PNG, TXT, or CSV formats. Extracted medicines appear in an editable preview table where you can review, adjust quantities, and verify fields before clicking <strong>Confirm & Update Stock</strong>.</p>
+            </div>
+            <button id="loadSampleInvoiceBtn" class="btn btn-outline-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+              ⚡ Load Demo Supplier Invoice
+            </button>
+          </div>
+
+          <!-- Step 1: Upload Dropzone & Paste Box -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="billing-pos-card">
+              <h4 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-main);">Option A: Upload Invoice File</h4>
+              <div class="invoice-upload-dropzone" id="invoiceDropzone">
+                <input type="file" id="invoiceFileInput" accept=".pdf,.jpg,.jpeg,.png,.txt,.csv" style="display: none;">
+                <span style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem;">📄</span>
+                <strong style="color: var(--primary-dark); font-size: 0.95rem;">Click or Drag & Drop Invoice File</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Supports PDF (Text extraction), Scanned Images (JPG, PNG), and CSV/TXT</p>
+                <div id="selectedFileName" style="margin-top: 0.75rem; font-size: 0.85rem; font-weight: 700; color: #059669;"></div>
+              </div>
+            </div>
+
+            <div class="billing-pos-card">
+              <h4 style="font-size: 1rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text-main);">Option B: Paste Raw Invoice Content</h4>
+              <textarea id="invoiceRawTextArea" class="form-input" style="height: 140px; font-family: monospace; font-size: 0.82rem; resize: vertical;" placeholder="Supplier: SunPharma Wholesale Ltd
+Invoice: INV-2026-NOV-8812
+Dolo 650 | Micro Labs | Tablets | 650mg | 50 | 30.50 | 2028-06-30 | BAT-DL-772
+Augmentin 625 Duo | GSK | Tablets | 625mg | 60 | 204.00 | 2027-11-30 | BAT-AUG-331"></textarea>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 1.5rem;">
+            <button id="extractInvoiceBtn" class="btn btn-primary" style="padding: 0.85rem 1.75rem; font-size: 0.95rem; font-weight: 700;">
+              🔍 Extract & Preview Invoice Items →
+            </button>
+          </div>
+
+          <!-- Step 2: EDITABLE PREVIEW TABLE BEFORE UPDATING STOCK -->
+          <div id="invoicePreviewCard" class="billing-pos-card" style="display: none; border-left: 4px solid #3b82f6; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <span class="sidebar-badge" style="background: #eff6ff; color: #1e40af; font-size: 0.75rem; padding: 0.25rem 0.65rem;">STAGE 1: VERIFICATION PREVIEW</span>
+                <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-top: 0.35rem;">Review & Edit Extracted Invoice Items</h4>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Verify medicine names, quantities, and prices. You can edit any field or add new items. Stock will only be updated after you click "Confirm & Update Stock".</p>
+              </div>
+              <button type="button" id="addInvoicePreviewRowBtn" class="btn btn-outline-primary" style="font-size: 0.8rem; padding: 0.4rem 0.85rem;">
+                + Add Another Medicine Row
+              </button>
+            </div>
+
+            <!-- Duplicate Warning Alert Box -->
+            <div id="duplicateInvoiceAlert" style="display: none; padding: 0.85rem 1.25rem; border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 700; margin-bottom: 1.25rem; background: #fffbeb; color: #b45309; border: 1.5px solid #fde68a;"></div>
+
+            <!-- Invoice Header Metadata Form -->
+            <div class="form-grid-2" style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.25rem; border: 1px solid var(--border-light);">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.8rem;">Invoice / Bill Number</label>
+                <input type="text" id="previewInvoiceNum" class="form-input" style="font-size: 0.85rem;">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.8rem;">Distributor / Supplier Name</label>
+                <input type="text" id="previewSupplierName" class="form-input" style="font-size: 0.85rem;">
+              </div>
+            </div>
+
+            <!-- Editable Table -->
+            <div style="overflow-x: auto;">
+              <table class="inventory-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="width: 22%;">Medicine Name</th>
+                    <th style="width: 14%;">Brand / Mfr</th>
+                    <th style="width: 10%;">Strength</th>
+                    <th style="width: 10%;">Qty to Add</th>
+                    <th style="width: 11%;">Purchase Price (₹)</th>
+                    <th style="width: 11%;">Batch No.</th>
+                    <th style="width: 12%;">Expiry Date</th>
+                    <th style="width: 10%;">Stock Impact</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="invoicePreviewTableBody"></tbody>
+              </table>
+            </div>
+
+            <!-- Confirmation Action Bar -->
+            <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">Total Medicines: <strong id="previewTotalItemsCount">0</strong> • Total Units: <strong id="previewTotalQtyCount">0</strong> • Invoice Total: <strong id="previewTotalValDisplay">₹0.00</strong></span>
+              </div>
+              <div style="display: flex; gap: 0.75rem;">
+                <button type="button" id="cancelInvoicePreviewBtn" class="btn btn-outline-primary" style="padding: 0.75rem 1.25rem; font-size: 0.9rem;">
+                  Cancel
+                </button>
+                <button type="button" id="confirmInvoiceBtn" class="btn btn-primary" style="padding: 0.75rem 1.75rem; font-size: 0.95rem; font-weight: 800; background: #059669; border-color: #059669;">
+                  ✓ Confirm & Update Stock
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: SUCCESS CONFIRMATION RESULTS -->
+          <div id="invoiceResultCard" class="billing-pos-card" style="display: none; border-left: 4px solid #10b981;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <h4 style="color: #059669; font-weight: 800; font-size: 1.2rem;">✓ Stock Successfully Added to Store Inventory!</h4>
+              <span id="invoiceSummaryBadge" class="sidebar-badge" style="background: #dcfce7; color: #166534; font-size: 0.85rem; padding: 0.4rem 0.85rem;"></span>
+            </div>
+            <p id="invoiceResultMessage" style="font-size: 0.92rem; color: var(--text-main); margin-bottom: 1.25rem; font-weight: 600;"></p>
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Medicine Name</th>
+                    <th>Batch</th>
+                    <th>Previous Stock</th>
+                    <th>Quantity Added</th>
+                    <th>New Available Stock</th>
+                    <th>Unit Price</th>
+                    <th>Action Taken</th>
+                  </tr>
+                </thead>
+                <tbody id="invoiceParsedTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: PURCHASE INVOICE HISTORY -->
+        <div id="viewPurchaseHistory" class="dashboard-view-panel" style="display: none;">
+          <div class="panel-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Purchase Invoices & Supplier Imports History</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted);">Audit log of all confirmed purchase invoices uploaded to this pharmacy.</p>
+            </div>
+            <button class="btn btn-outline-primary" id="refreshInvoiceHistoryBtn" style="font-size: 0.85rem; padding: 0.45rem 0.95rem;">
+              🔄 Refresh History
+            </button>
+          </div>
+
+          <div class="billing-pos-card">
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Supplier / Distributor</th>
+                    <th>File Name</th>
+                    <th>Items Count</th>
+                    <th>Total Stock Added</th>
+                    <th>Total Value (₹)</th>
+                    <th>Import Timestamp</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="purchaseHistoryTableBody">
+                  <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading purchase history...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: PHARMACY COUNTER BILLING & POS -->
+        <div id="viewBilling" class="dashboard-view-panel" style="display: none;">
+          <div class="panel-header" style="margin-bottom: 1.5rem;">
+            <div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Pharmacy POS Counter Billing</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted);">Generate customer bills. Clicking <strong>Save</strong> will automatically deduct medicine quantities from your store inventory.</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+            <!-- Left: Bill Line Items & Customer Details -->
+            <div style="grid-column: span 2;">
+              <div class="billing-pos-card">
+                <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main);">Customer Details</h4>
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Customer Name</label>
+                    <input type="text" id="billCustName" class="form-input" placeholder="e.g. Walk-in Customer / Rohan Gupta" value="Walk-in Customer">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Customer Mobile</label>
+                    <input type="text" id="billCustPhone" class="form-input" placeholder="10-digit mobile number" value="9876543210">
+                  </div>
+                </div>
+              </div>
+
+              <div class="billing-pos-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                  <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Select Medicines from Store Inventory</h4>
+                  <button type="button" id="addBillRowBtn" class="btn btn-outline-primary" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                    + Add Another Item
+                  </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                  <table class="inventory-table" style="width: 100%;">
+                    <thead>
+                      <tr>
+                        <th style="width: 45%;">Medicine & Available Stock</th>
+                        <th style="width: 20%;">Qty to Bill</th>
+                        <th style="width: 20%;">Price (₹)</th>
+                        <th style="width: 15%;">Total</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody id="billItemsTableBody">
+                      <!-- Dynamic Bill Line Items -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Bill Summary & Action Buttons -->
+            <div>
+              <div class="billing-pos-card" style="position: sticky; top: 1rem;">
+                <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 1.25rem; color: var(--text-main); border-bottom: 1px solid var(--border-light); padding-bottom: 0.75rem;">
+                  Bill Summary
+                </h4>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+                  <span style="color: var(--text-muted);">Items Subtotal:</span>
+                  <strong id="billSubtotalDisplay">₹0.00</strong>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+                  <span style="color: var(--text-muted);">Healthcare GST (5%):</span>
+                  <strong id="billTaxDisplay">₹0.00</strong>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <label class="form-label" style="font-size: 0.8rem;">Discount (₹):</label>
+                  <input type="number" id="billDiscountInput" class="form-input" value="0.00" min="0" step="1">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                  <label class="form-label" style="font-size: 0.8rem;">Payment Mode:</label>
+                  <select id="billPaymentModeSelect" class="form-select">
+                    <option value="CASH">Cash Payment</option>
+                    <option value="UPI">UPI / QR Code</option>
+                    <option value="CARD">Credit / Debit Card</option>
+                  </select>
+                </div>
+
+                <div style="border-top: 2px dashed var(--border-light); padding-top: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: baseline;">
+                  <span style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Grand Total:</span>
+                  <span style="font-size: 1.6rem; font-weight: 800; color: var(--primary-dark);" id="billGrandTotalDisplay">₹0.00</span>
+                </div>
+
+                <!-- 3 CRUCIAL BUTTONS: SAVE, PRINT, DOWNLOAD PDF -->
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <button type="button" id="saveBillBtn" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 700;">
+                    💾 Save Bill & Deduct Stock
+                  </button>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button type="button" id="printBillBtn" class="btn btn-outline-primary" style="padding: 0.75rem 0.5rem; font-size: 0.85rem; font-weight: 700;" disabled>
+                      🖨️ Print Bill
+                    </button>
+                    <button type="button" id="downloadPdfBillBtn" class="btn btn-outline-primary" style="padding: 0.75rem 0.5rem; font-size: 0.85rem; font-weight: 700;" disabled>
+                      📄 Download PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Bills History in POS view -->
+          <div class="billing-pos-card" style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main);">Recent Counter Bills Generated</h4>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">Stock automatically deducted upon saving</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Bill #</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total (₹)</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="recentBillsTableBody">
+                  <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading billing records...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: SALES & BILLING HISTORY (Full Dedicated Section) -->
+        <div id="viewSalesHistory" class="dashboard-view-panel" style="display: none;">
+          <div class="panel-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Sales History & POS Counter Billing Archive</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted);">View previous counter bills, reprint receipts, or process bill cancellation and stock inventory reversal.</p>
+            </div>
+            <button class="btn btn-outline-primary" id="refreshSalesHistoryBtn" style="font-size: 0.85rem; padding: 0.45rem 0.95rem;">
+              🔄 Refresh Sales Archive
+            </button>
+          </div>
+
+          <div class="billing-pos-card">
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Bill Number</th>
+                    <th>Customer Name</th>
+                    <th>Customer Mobile</th>
+                    <th>Subtotal</th>
+                    <th>Tax (5%)</th>
+                    <th>Grand Total</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="salesHistoryTableBody">
+                  <tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading sales archive...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: REPORTS & ANALYTICS -->
+        <div id="viewReports" class="dashboard-view-panel" style="display: none;">
+          <div class="panel-header" style="margin-bottom: 1.5rem;">
+            <div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Pharmacy Analytics & Low-Stock Alerts</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted);">Real-time inventory valuation, fast-depleting medicines, and stock health.</p>
+            </div>
+          </div>
+
+          <div class="stats-grid" style="margin-bottom: 2rem;">
+            <div class="stat-card">
+              <span class="stat-title">Total Units Stocked</span>
+              <div class="stat-value" id="reportTotalUnits">0</div>
+              <span style="font-size: 0.8rem; color: #059669;">In store inventory</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Inventory Valuation</span>
+              <div class="stat-value" id="reportInventoryValuation">₹0.00</div>
+              <span style="font-size: 0.8rem; color: #0284c7;">Total retail value</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Low Stock SKUs (&le; 15)</span>
+              <div class="stat-value" id="reportLowStockCount" style="color: #ef4444;">0</div>
+              <span style="font-size: 0.8rem; color: #ef4444;">Need immediate reordering</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Total POS Sales</span>
+              <div class="stat-value" id="reportTotalSales" style="color: #059669;">₹0.00</div>
+              <span style="font-size: 0.8rem; color: #059669;">From counter billing</span>
+            </div>
+          </div>
+
+          <div class="billing-pos-card">
+            <h4 style="font-size: 1.1rem; font-weight: 800; color: #dc2626; margin-bottom: 1rem;">
+              ⚠️ Critical Low-Stock Alert List
+            </h4>
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Medicine Name</th>
+                    <th>Category</th>
+                    <th>Current Stock</th>
+                    <th>Batch</th>
+                    <th>Unit Price (₹)</th>
+                    <th>Alert Status</th>
+                  </tr>
+                </thead>
+                <tbody id="lowStockAlertTableBody">
+                  <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Checking stock levels...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW: ORDERS & DELIVERY DISPATCH -->
+        <div id="viewOrders" class="dashboard-view-panel" style="display: none;">
+          <div class="panel-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Customer Orders & Preparation Queue</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted);">Process incoming prescriptions, prepare medicine packages, and dispatch to assigned delivery partners.</p>
+            </div>
+            <button class="btn btn-outline-primary" id="refreshPharmacyOrdersBtn" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+              🔄 Refresh Orders Queue
+            </button>
+          </div>
+
+          <div class="billing-pos-card">
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Priority</th>
+                    <th>Order #</th>
+                    <th>Customer Details</th>
+                    <th>Prescribed Medicines</th>
+                    <th>Total & Payment</th>
+                    <th>Assigned Rider</th>
+                    <th>Status</th>
+                    <th>Dispatch Action</th>
+                  </tr>
+                </thead>
+                <tbody id="pharmacyOrdersTableBody">
+                  <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading orders queue...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        
+        <!-- VIEW: EARNINGS & PHARMACY SETTLEMENTS -->
+        <div id="viewEarnings" class="dashboard-view-panel" style="display: none;">
+          <div class="panel-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Payments & Earnings</h3>
+              <p style="font-size: 0.88rem; color: var(--text-muted);">Real-time breakdown of gross customer sales, platform commission deductions, and net settled payouts.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn-outline-primary" id="downloadEarningsCsvBtn" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                📥 Download CSV
+              </button>
+              <button class="btn btn-outline-primary" id="refreshEarningsBtn" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                🔄 Refresh Settlements
+              </button>
+            </div>
+          </div>
+
+          <!-- Verified Linked Payout Account Banner (Razorpay Route) -->
+          <div class="billing-pos-card" style="margin-bottom: 1.5rem; border-left: 4px solid #10b981; background: #f0fdf4;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <span class="sidebar-badge" style="background: #dcfce7; color: #166534; font-size: 0.75rem;">✓ VERIFIED PAYOUT ACCOUNT</span>
+                <h4 style="margin: 0.35rem 0 0.15rem 0; font-size: 1.05rem; color: var(--text-main);" id="pharmPayoutBankName">HDFC Bank •••• 9821</h4>
+                <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Gateway Linked Route Account: <code id="pharmPayoutAccountId" style="font-weight: 700;">acc_apollo_route_01</code> • Status: <strong style="color: #059669;" id="pharmPayoutStatus">ACTIVE</strong></p>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 0.78rem; color: var(--text-muted); display: block;">Settlement Frequency</span>
+                <strong style="font-size: 0.9rem; color: var(--text-main);">Automatic T+0 / On Order Completion</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6 Summary KPI Cards -->
+          <div class="stats-grid" style="margin-bottom: 2rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="stat-card">
+              <span class="stat-title">Total Sales</span>
+              <div class="stat-value" id="pharmEtrTotalRevenue" style="color: #059669;">₹0.00</div>
+              <span style="font-size: 0.8rem; color: #059669;">Gross customer payments</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Total Received</span>
+              <div class="stat-value" id="pharmEtrNetSettled" style="color: #0284c7;">₹0.00</div>
+              <span style="font-size: 0.8rem; color: #0284c7;">Settled into payout account</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Pending Settlements</span>
+              <div class="stat-value" id="pharmEtrPendingSettlements" style="color: #f59e0b;">₹0.00</div>
+              <span style="font-size: 0.8rem; color: #f59e0b;">Awaiting processing</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Completed Settlements</span>
+              <div class="stat-value" id="pharmEtrSettlementsCount" style="color: #7c3aed;">0</div>
+              <span style="font-size: 0.8rem; color: #7c3aed;">Settled order transfers</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Platform Commission</span>
+              <div class="stat-value" id="pharmEtrCommDeducted" style="color: #ef4444;">₹0.00</div>
+              <span style="font-size: 0.8rem; color: #ef4444;">Admin platform fee</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title">Available Payout Balance</span>
+              <div class="stat-value" id="pharmEtrAvailableBalance" style="color: #059669;">₹0.00</div>
+              <span style="font-size: 0.8rem; color: #059669;">Ready for bank transfer</span>
+            </div>
+          </div>
+
+          <!-- Settlements Ledger Table -->
+          <div class="billing-pos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+              <h4 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                Transaction & Settlement History
+              </h4>
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Showing all orders settled for this pharmacy</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Order Amount</th>
+                    <th>Commission</th>
+                    <th>Owner Share</th>
+                    <th>Payment Status</th>
+                    <th>Settlement Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="pharmacySettlementsTableBody">
+                  <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading settlement history...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Printable Bill Receipt Section (Hidden until Print is triggered) -->
+        <div id="billPrintSection" style="display: none;">
+          <div style="max-width: 600px; margin: 0 auto; border: 1px solid #000; padding: 24px; font-family: monospace;">
+            <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 12px; margin-bottom: 12px;">
+              <h2 style="margin: 0; font-size: 1.4rem;" id="printPharmacyName">Apollo Pharmacy</h2>
+              <p style="margin: 4px 0; font-size: 0.85rem;" id="printPharmacyAddress">Indiranagar, Bangalore</p>
+              <p style="margin: 4px 0; font-size: 0.85rem;">Drug License: <span id="printPharmacyLicense">DL-KA-2024-984321</span></p>
+              <p style="margin: 4px 0; font-size: 0.85rem;">GSTIN: 29AAAAA0000A1Z5</p>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 12px;">
+              <div>
+                <strong>Bill No:</strong> <span id="printBillNumber">BILL-0000</span><br>
+                <strong>Date:</strong> <span id="printBillDate">2026-11-17</span>
+              </div>
+              <div style="text-align: right;">
+                <strong>Customer:</strong> <span id="printCustName">Walk-in</span><br>
+                <strong>Phone:</strong> <span id="printCustPhone">-</span>
+              </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 12px;">
+              <thead>
+                <tr style="border-top: 1px solid #000; border-bottom: 1px solid #000;">
+                  <th style="text-align: left; padding: 4px 0;">Item</th>
+                  <th style="text-align: center; padding: 4px 0;">Batch</th>
+                  <th style="text-align: right; padding: 4px 0;">Qty</th>
+                  <th style="text-align: right; padding: 4px 0;">Rate</th>
+                  <th style="text-align: right; padding: 4px 0;">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="printBillItemsTbody"></tbody>
+            </table>
+
+            <div style="border-top: 1px dashed #000; padding-top: 8px; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Subtotal:</span>
+                <span id="printSubtotal">₹0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span>GST (5%):</span>
+                <span id="printTax">₹0.00</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; border-top: 1px solid #000; margin-top: 6px; padding-top: 6px;">
+                <span>GRAND TOTAL:</span>
+                <span id="printGrandTotal">₹0.00</span>
+              </div>
+              <div style="margin-top: 4px; font-size: 0.8rem;">
+                Payment Mode: <strong id="printPaymentMode">CASH</strong>
+              </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px; font-size: 0.8rem; border-top: 1px dashed #000; padding-top: 12px;">
+              Thank you for trusting PharmaTech Partner Pharmacy!<br>
+              Wishing you good health.
+            </div>
+
+            <div class="no-print" style="text-align: center; margin-top: 16px;">
+              <button onclick="window.print();" class="btn btn-primary" style="padding: 0.5rem 1rem;">Print Now</button>
+              <button onclick="document.getElementById('billPrintSection').style.display='none';" class="btn btn-outline-primary" style="padding: 0.5rem 1rem; margin-left: 8px;">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 4: ATTRACTIVE COMING SOON VIEW (Kept for future features) -->
+        <div id="viewComingSoon" class="dashboard-view-panel" style="display: none;">
+          <div class="coming-soon-box">
+            <span class="coming-soon-badge">Future Release</span>
+            <h2 id="comingSoonFeatureTitle" style="font-size: 1.6rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.75rem;">
+              Feature Coming Soon
+            </h2>
+            <p style="max-width: 540px; margin: 0 auto 1.5rem; color: var(--text-muted); font-size: 0.92rem; line-height: 1.6;">
+              This module will be expanded with automated AI forecasting in upcoming releases.
+            </p>
+            <button class="btn btn-primary" onclick="document.querySelector('[data-view=inventory]').click();">
+              Go to Store Inventory
+            </button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD MEDICINE -->
+  <div class="modal-overlay" id="addMedicineModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add Medicine to Store Inventory</h3>
+        <button class="modal-close-btn" id="closeAddModalBtn">&times;</button>
+      </div>
+
+      <form id="addMedicineForm">
+        <div class="modal-body">
+          
+          <div class="form-group" style="background: #f8fafc; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
+            <label class="form-label" style="margin-bottom: 0.25rem;">Auto-fill from Master Catalog</label>
+            <select id="medCatalogSelect" class="form-select">
+              <option value="">-- Choose Known Medicine or Enter Below --</option>
+            </select>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Medicine Name *</label>
+              <input type="text" id="addMedName" class="form-input" placeholder="e.g. Dolo 650" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Brand / Manufacturer *</label>
+              <input type="text" id="addMedBrand" class="form-input" placeholder="e.g. Micro Labs" required>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Strength / Dosage *</label>
+              <input type="text" id="addMedStrength" class="form-input" placeholder="e.g. 650mg, 100ml" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select id="addMedCategory" class="form-select" required>
+                <option value="Tablets">Tablets</option>
+                <option value="Syrups">Syrups</option>
+                <option value="First Aid">First Aid</option>
+                <option value="Vitamins">Vitamins</option>
+                <option value="Personal Care">Personal Care</option>
+                <option value="Healthcare Devices">Healthcare Devices</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Stock Quantity (Units) *</label>
+              <input type="number" id="addMedQty" class="form-input" placeholder="e.g. 50" min="0" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Selling Price (₹) *</label>
+              <input type="number" step="0.01" id="addMedPrice" class="form-input" placeholder="e.g. 30.50" min="0.01" required>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Expiry Date</label>
+              <input type="date" id="addMedExpiry" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Batch Number</label>
+              <input type="text" id="addMedBatch" class="form-input" placeholder="e.g. BAT-2026-99">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea id="addMedDesc" class="form-textarea" rows="2" placeholder="Brief dosage or usage notes..."></textarea>
+          </div>
+
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+            <input type="checkbox" id="addMedRx" style="width: 16px; height: 16px;">
+            <label for="addMedRx" style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+              Requires Doctor's Prescription (Rx)
+            </label>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('addMedicineModal').classList.remove('open');">Cancel</button>
+          <button type="submit" id="saveMedBtn" class="btn btn-primary">Add to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT MEDICINE -->
+  <div class="modal-overlay" id="editMedicineModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit Medicine Stock & Price</h3>
+        <button class="modal-close-btn" id="closeEditModalBtn">&times;</button>
+      </div>
+
+      <form id="editMedicineForm">
+        <input type="hidden" id="editInvId">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Medicine Name</label>
+              <input type="text" id="editMedName" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Brand</label>
+              <input type="text" id="editMedBrand" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Strength</label>
+              <input type="text" id="editMedStrength" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select id="editMedCategory" class="form-select" required>
+                <option value="Tablets">Tablets</option>
+                <option value="Syrups">Syrups</option>
+                <option value="First Aid">First Aid</option>
+                <option value="Vitamins">Vitamins</option>
+                <option value="Personal Care">Personal Care</option>
+                <option value="Healthcare Devices">Healthcare Devices</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Quantity</label>
+              <input type="number" id="editMedQty" class="form-input" min="0" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Selling Price (₹)</label>
+              <input type="number" step="0.01" id="editMedPrice" class="form-input" min="0.01" required>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Expiry Date</label>
+              <input type="date" id="editMedExpiry" class="form-input">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Batch Number</label>
+              <input type="text" id="editMedBatch" class="form-input">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('editMedicineModal').classList.remove('open');">Cancel</button>
+          <button type="submit" id="updateMedBtn" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: INSTANT NEW ORDER ALERT -->
+  <div class="modal-overlay" id="newOrderAlertModal" style="z-index: 9999;">
+    <div class="modal-card" style="max-width: 560px; border-top: 5px solid #ef4444; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+      <div class="modal-header" style="background: #fef2f2; border-bottom: 1px solid #fee2e2; padding: 1.25rem 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 1.8rem;">🚨</span>
+          <div>
+            <h3 style="margin: 0; color: #991b1b; font-size: 1.15rem; font-weight: 800;">Incoming Customer Prescription!</h3>
+            <span id="modalOrderPriorityBadge" class="badge-emergency-pulse" style="margin-top: 0.25rem;">🚨 EMERGENCY DELIVERY</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeNewOrderAlertModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.5rem;">
+        <div style="background: #f8fafc; border-radius: 8px; padding: 1rem; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.82rem; color: #64748b; font-weight: 600;">Order ID:</span>
+            <strong id="modalAlertOrderNumber" style="color: #2563eb; font-size: 0.95rem;">ORD-XXXX</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.82rem; color: #64748b; font-weight: 600;">Customer:</span>
+            <strong id="modalAlertCustomerName" style="color: #0f172a;">Customer Name</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.82rem; color: #64748b; font-weight: 600;">Customer Phone:</span>
+            <span id="modalAlertCustomerPhone" style="color: #0f172a; font-weight: 600;">9876543210</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <span style="font-size: 0.82rem; color: #64748b; font-weight: 600;">Delivery Address:</span>
+            <span id="modalAlertDeliveryAddress" style="color: #334155; font-size: 0.85rem; text-align: right; max-width: 60%;">123 Main St, Bangalore</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-top: 1px dashed #cbd5e1; padding-top: 0.5rem; margin-top: 0.5rem;">
+            <span style="font-size: 0.85rem; color: #64748b; font-weight: 700;">Total Bill Amount:</span>
+            <strong id="modalAlertTotalAmount" style="color: #059669; font-size: 1.15rem;">₹0.00</strong>
+          </div>
+        </div>
+
+        <h4 style="font-size: 0.95rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">Prescribed Medicines:</h4>
+        <div id="modalAlertItemsList" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; max-height: 160px; overflow-y: auto; padding: 0.5rem;">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" class="btn btn-outline-primary" id="dismissAlertModalBtn">Review Later</button>
+        <button type="button" class="btn btn-primary" id="modalAlertPrepareBtn" style="background: #059669; border-color: #059669;">
+          👨‍🍳 Start Preparing Medicine Now →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

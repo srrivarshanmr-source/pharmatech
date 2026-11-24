@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delivery Partner Dashboard – PharmaTech</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z'/></svg>">
+  
+  <!-- Strict Route Protection -->
+  <script>
+    (function() {
+      try {
+        var user = JSON.parse(localStorage.getItem('pharmatech_user') || 'null');
+        if (!user || user.role !== 'ROLE_DELIVERY_PARTNER') {
+          window.location.replace('delivery-login.html');
+        }
+      } catch (e) {
+        window.location.replace('delivery-login.html');
+      }
+    })();
+  </script>
+
+  <style>
+    body {
+      background: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .delivery-dashboard-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: white;
+      padding: 1.75rem 0;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+    }
+
+    .delivery-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+      margin: -2rem auto 2rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .delivery-kpi-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .kpi-icon-circle {
+      width: 54px;
+      height: 54px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    .order-delivery-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+
+    .order-delivery-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: #93c5fd;
+    }
+
+    .order-delivery-card.emergency-card {
+      border: 2px solid #ef4444;
+      background: #fffcfc;
+    }
+
+    .route-step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .route-dot {
+      width: 26px;
+      height: 26px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.78rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .status-assigned {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    .status-out {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    .status-delivered {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .badge-emergency-pulse {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+      animation: pulseAlert 1.5s infinite;
+      font-weight: 800;
+      border-radius: 9999px;
+      padding: 0.25rem 0.65rem;
+      font-size: 0.75rem;
+      display: inline-block;
+    }
+
+    @keyframes pulseAlert {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .tab-btn {
+      padding: 0.75rem 1.25rem;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: #1e3a8a;
+    }
+
+    .tab-btn.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #cbd5e1;
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #22c55e;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Delivery Header -->
+  <header class="delivery-dashboard-header">
+    <div class="container" style="max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <span style="font-size: 2.2rem;">🛵</span>
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <h1 style="font-size: 1.5rem; font-weight: 800; margin: 0; letter-spacing: -0.5px;">PharmaTech — Delivery Partner</h1>
+            <span id="statusIndicatorPill" style="background: #22c55e; color: white; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700;">
+              ● Online & Accepting Deliveries
+            </span>
+          </div>
+          <p style="margin: 0.2rem 0 0; opacity: 0.9; font-size: 0.85rem;" id="riderSubtext">
+            Vehicle: KA-03-EB-4412 • Hub: Bangalore East • Active Session
+          </p>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1.5rem;">
+        <!-- Online/Offline Toggle -->
+        <div style="display: flex; align-items: center; gap: 0.6rem; background: rgba(255,255,255,0.15); padding: 0.4rem 0.8rem; border-radius: 9999px;">
+          <span style="font-size: 0.8rem; font-weight: 700;" id="toggleLabel">ONLINE</span>
+          <label class="switch">
+            <input type="checkbox" id="onlineToggleSwitch" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div style="text-align: right;">
+          <strong style="display: block; font-size: 0.95rem;" id="riderNameDisplay">Karthik Rider</strong>
+          <span style="font-size: 0.78rem; opacity: 0.85;">⭐ 4.9 Rating</span>
+        </div>
+
+        <button id="refreshOrdersBtn" class="btn btn-outline-primary" style="background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 0.55rem 0.85rem;" title="Refresh orders">
+          🔄 Refresh
+        </button>
+
+        <button id="logoutDeliveryBtn" class="btn btn-outline-primary" style="background: rgba(255,255,255,0.2); color: white; border-color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 0.55rem 1rem;">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="container" style="max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem;">
+
+    <!-- 5 KPI Summary Cards -->
+    <div class="delivery-kpi-grid">
+      <div class="delivery-kpi-card">
+        <div class="kpi-icon-circle" style="background: #eff6ff; color: #2563eb;">📦</div>
+        <div>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Deliveries</span>
+          <h3 style="font-size: 1.8rem; font-weight: 800; color: #1e3a8a;" id="kpiActiveOrders">0</h3>
+        </div>
+      </div>
+
+      <div class="delivery-kpi-card">
+        <div class="kpi-icon-circle" style="background: #ecfdf5; color: #059669;">✅</div>
+        <div>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Delivered Today</span>
+          <h3 style="font-size: 1.8rem; font-weight: 800; color: #065f46;" id="kpiDeliveredOrders">0</h3>
+        </div>
+      </div>
+
+      <div class="delivery-kpi-card">
+        <div class="kpi-icon-circle" style="background: #fef3c7; color: #d97706;">💰</div>
+        <div>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Today's Payout</span>
+          <h3 style="font-size: 1.8rem; font-weight: 800; color: #92400e;" id="kpiEarnings">₹0.00</h3>
+        </div>
+      </div>
+
+      <div class="delivery-kpi-card">
+        <div class="kpi-icon-circle" style="background: #fef2f2; color: #dc2626;">💵</div>
+        <div>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Cash to Remit</span>
+          <h3 style="font-size: 1.8rem; font-weight: 800; color: #b91c1c;" id="kpiCashRemittance">₹0.00</h3>
+        </div>
+      </div>
+
+      <div class="delivery-kpi-card">
+        <div class="kpi-icon-circle" style="background: #f1f5f9; color: #475569;">🛵</div>
+        <div>
+          <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Fleet Trips</span>
+          <h3 style="font-size: 1.8rem; font-weight: 800; color: var(--text-main);" id="kpiTotalTrips">0</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; margin-bottom: 1.75rem; flex-wrap: wrap;">
+      <button class="tab-btn active" id="tabActiveBtn">📦 Active Deliveries</button>
+      <button class="tab-btn" id="tabCollectionBtn">💳 Payment Collection</button>
+      <button class="tab-btn" id="tabHistoryBtn">📑 Delivery History</button>
+      <button class="tab-btn" id="tabEarningsBtn">💵 Earnings Breakdown</button>
+    </div>
+
+    <!-- TAB 1: ACTIVE DELIVERIES -->
+    <div id="sectionActive">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div>
+          <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Assigned Medicine Deliveries</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Pick up verified medicine packages from pharmacies and hand over to patients.</p>
+        </div>
+      </div>
+
+      <div id="deliveriesContainer">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+
+    <!-- TAB 2: PAYMENT COLLECTION (Requirement 6) -->
+    <div id="sectionCollection" style="display: none;">
+      <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: 1.75rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem 0;">Payment Collection & Reconciliation</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Collect Cash on Delivery, generate single-use UPI QR codes, and monitor cash remittance liability.</p>
+          </div>
+          <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 0.6rem 1.25rem; text-align: right;">
+            <span style="font-size: 0.72rem; color: #991b1b; font-weight: 800; text-transform: uppercase; display: block;">Outstanding Remittance to Admin:</span>
+            <strong id="collectionOutstandingRemittance" style="color: #b91c1c; font-size: 1.25rem;">₹0.00</strong>
+          </div>
+        </div>
+
+        <div id="collectionOrdersContainer">
+          <!-- Dynamically populated with active/pending collection cards -->
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: COMPLETED HISTORY -->
+    <div id="sectionHistory" style="display: none;">
+      <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: 1.75rem;">
+        <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main);">Delivered Orders Archive</h3>
+        <div style="overflow-x: auto;">
+          <table class="inventory-table" style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Destination</th>
+                <th>Pharmacy</th>
+                <th>Order Total</th>
+                <th>Collection Method</th>
+                <th>Rider Earning</th>
+                <th>Delivered At</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="completedOrdersTableBody">
+              <tr>
+                <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading completed delivery history...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: EARNINGS BREAKDOWN -->
+    <div id="sectionEarnings" style="display: none;">
+      <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: 1.75rem;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text-main);">Rider Earnings & Payout Summary</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Transparent payment calculations: Base payout per delivery + distance surcharge + emergency surge bonus.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <span style="font-size: 0.78rem; color: #64748b; font-weight: 700;">BASE PAY (PER TRIP)</span>
+            <h4 style="font-size: 1.5rem; font-weight: 800; color: #1e3a8a; margin-top: 0.25rem;">₹40.00</h4>
+            <span style="font-size: 0.75rem; color: #64748b;">Guaranteed on pickup</span>
+          </div>
+          <div style="background: #f8fafc; padding: 1.25rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <span style="font-size: 0.78rem; color: #64748b; font-weight: 700;">DISTANCE RATE</span>
+            <h4 style="font-size: 1.5rem; font-weight: 800; color: #0284c7; margin-top: 0.25rem;">₹10.00 / km</h4>
+            <span style="font-size: 0.75rem; color: #64748b;">Calculated automatically</span>
+          </div>
+          <div style="background: #fef2f2; padding: 1.25rem; border-radius: 8px; border: 1px solid #fecaca;">
+            <span style="font-size: 0.78rem; color: #991b1b; font-weight: 700;">EMERGENCY SURGE BONUS</span>
+            <h4 style="font-size: 1.5rem; font-weight: 800; color: #b91c1c; margin-top: 0.25rem;">+ ₹50.00</h4>
+            <span style="font-size: 0.75rem; color: #991b1b;">For critical life-saving orders</span>
+          </div>
+          <div style="background: #ecfdf5; padding: 1.25rem; border-radius: 8px; border: 1px solid #a7f3d0;">
+            <span style="font-size: 0.78rem; color: #065f46; font-weight: 700;">TOTAL ACCUMULATED</span>
+            <h4 style="font-size: 1.5rem; font-weight: 800; color: #059669; margin-top: 0.25rem;" id="totalPayoutDisplay">₹0.00</h4>
+            <span style="font-size: 0.75rem; color: #065f46;">Direct weekly deposit</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: INCOMING DELIVERY REQUEST POPUP -->
+  <div class="modal-overlay" id="incomingRequestModal" style="z-index: 9999;">
+    <div class="modal-card" style="max-width: 580px; border-top: 5px solid #2563eb; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+      <div class="modal-header" style="background: #eff6ff; border-bottom: 1px solid #dbeafe; padding: 1.25rem 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span style="font-size: 1.8rem;" id="requestModalIcon">🛵</span>
+          <div>
+            <h3 style="margin: 0; color: #1e3a8a; font-size: 1.15rem; font-weight: 800;">Incoming Delivery Request!</h3>
+            <span id="requestModalPriorityBadge" class="status-badge" style="margin-top: 0.25rem;">Standard Order</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeRequestModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.5rem;">
+        <!-- Pickup info -->
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+            <span style="background: #059669; color: white; border-radius: 9999px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800;">1</span>
+            <strong style="color: #065f46; font-size: 0.95rem;">PICKUP PHARMACY</strong>
+          </div>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0.2rem 0;" id="reqPharmacyName">Apollo Pharmacy</h4>
+          <p style="font-size: 0.85rem; color: #475569; margin: 0;" id="reqPharmacyAddress">Plot 18, 100ft Road, Indiranagar</p>
+          <small style="color: #64748b;" id="reqPharmacyPhone">Ph: 080-41235678</small>
+        </div>
+
+        <!-- Dropoff info -->
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
+            <span style="background: #2563eb; color: white; border-radius: 9999px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800;">2</span>
+            <strong style="color: #1e40af; font-size: 0.95rem;">DELIVERY DESTINATION</strong>
+          </div>
+          <h4 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0.2rem 0;" id="reqCustomerName">Patient Name</h4>
+          <p style="font-size: 0.85rem; color: #475569; margin: 0;" id="reqCustomerAddress">45 Park Avenue, Bangalore</p>
+          <div style="display: flex; justify-content: space-between; margin-top: 0.35rem;">
+            <small style="color: #64748b;" id="reqCustomerPhone">Ph: 9876543210</small>
+            <strong style="color: #2563eb; font-size: 0.85rem;" id="reqDistanceKm">Distance: 2.3 km</strong>
+          </div>
+        </div>
+
+        <!-- Package & Payment details -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <span style="font-size: 0.75rem; color: #64748b;">PAYMENT METHOD</span>
+            <h5 style="margin: 0.2rem 0; font-size: 0.95rem; font-weight: 800;" id="reqPaymentMethod">Pay on Delivery</h5>
+            <small id="reqPaymentAmount" style="color: #059669; font-weight: 700;">Collect: ₹0.00</small>
+          </div>
+          <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <span style="font-size: 0.75rem; color: #64748b;">RIDER PAYOUT</span>
+            <h5 style="margin: 0.2rem 0; font-size: 0.95rem; font-weight: 800; color: #059669;" id="reqRiderEarnings">₹65.00</h5>
+            <small id="reqEstTime" style="color: #64748b;">Est: ~20 mins</small>
+          </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.75rem;">
+          <strong style="font-size: 0.8rem; color: #475569; display: block; margin-bottom: 0.25rem;">Medicine Package Items:</strong>
+          <span style="font-size: 0.85rem; color: #1e293b;" id="reqMedicinesList">Prescription Medicines</span>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 1rem 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" class="btn btn-outline-primary" id="reqRejectBtn" style="color: #dc2626; border-color: #fca5a5;">
+          ❌ Reject Request
+        </button>
+        <button type="button" class="btn btn-primary" id="reqAcceptBtn" style="background: #2563eb; padding: 0.65rem 1.5rem; font-weight: 800;">
+          ✅ Accept & Start Delivery →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DEDICATED PAYMENT COLLECTION (Requirement 3 & 6 Interface) -->
+  <div class="modal-overlay" id="payOnDeliveryModal" style="z-index: 10000;">
+    <div class="modal-card" style="max-width: 500px; border-top: 5px solid #2563eb; border-radius: 16px; overflow: hidden;">
+      
+      <!-- Header -->
+      <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">PharmaTech — Delivery Partner</span>
+          <h3 style="margin: 0.15rem 0 0; color: #0f172a; font-size: 1.15rem; font-weight: 800;" id="collectionModalTitle">Payment Collection</h3>
+        </div>
+        <button class="modal-close-btn" id="closePayModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.5rem;">
+        
+        <!-- Order & Amount Overview Box -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.15rem; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">
+            <div>
+              <span style="font-size: 0.72rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Order</span>
+              <div id="podOrderNumber" style="font-size: 1.1rem; font-weight: 800; color: #1e3a8a;">ORD-0000000</div>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 0.72rem; color: #64748b; text-transform: uppercase; font-weight: 700;">Payment Method</span>
+              <div style="font-size: 0.88rem; font-weight: 700; color: #334155;">Cash on Delivery</div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.25rem;">
+            <span style="font-size: 0.85rem; color: #475569; font-weight: 700;">Amount to Collect:</span>
+            <h2 style="font-size: 1.85rem; font-weight: 800; color: #059669; margin: 0;" id="podAmountDisplay">₹0.00</h2>
+          </div>
+        </div>
+
+        <!-- Method Selection Tabs: UPI QR Payment vs Collect Cash -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1.25rem;">
+          <button type="button" id="btnChooseQr" class="btn" style="padding: 0.75rem; font-weight: 800; font-size: 0.88rem; border-radius: 8px; border: 2px solid #2563eb; background: #eff6ff; color: #1e40af;">
+            ⚡ UPI QR Payment
+          </button>
+          <button type="button" id="btnChooseCash" class="btn" style="padding: 0.75rem; font-weight: 700; font-size: 0.88rem; border-radius: 8px; border: 2px solid #cbd5e1; background: white; color: #475569;">
+            💵 Collect Cash
+          </button>
+        </div>
+
+        <!-- PANEL A: UPI QR PAYMENT -->
+        <div id="panelQrPayment" style="display: block;">
+          <div style="border: 1.5px dashed #059669; background: #f0fdf4; border-radius: 12px; padding: 1.25rem; text-align: center; margin-bottom: 1rem;">
+            
+            <button type="button" id="btnGenerateQr" class="btn btn-primary" style="background: #059669; border-color: #059669; font-weight: 800; padding: 0.65rem 1.25rem; font-size: 0.9rem; margin-bottom: 0.75rem;">
+              📷 Generate Payment QR
+            </button>
+
+            <!-- QR Code Container -->
+            <div id="qrCodeWrapper" style="display: none;">
+              <img id="podUpiQrImg" src="" alt="Dynamic Payment QR Code" style="width: 190px; height: 190px; margin: 0 auto 0.65rem auto; display: block; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+              <p style="font-size: 0.75rem; color: #475569; margin: 0; font-family: monospace;">Single-use fixed QR for Google Pay, PhonePe, Paytm, BHIM</p>
+            </div>
+
+            <p style="font-size: 0.78rem; color: #64748b; margin: 0.5rem 0 0;" id="qrHelpText">
+              The actual QR will appear here after the gateway creates it for this order.
+            </p>
+          </div>
+
+          <!-- Live Status Bar -->
+          <div id="qrStatusBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span id="qrStatusDot" style="width: 10px; height: 10px; border-radius: 50%; background: #d97706; display: inline-block;"></span>
+              <strong id="qrStatusText" style="font-size: 0.85rem; color: #b45309;">Awaiting payment</strong>
+            </div>
+            <button type="button" id="btnCheckQrStatus" class="btn btn-outline-primary" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">
+              🔄 Check Status
+            </button>
+          </div>
+
+          <!-- Transaction details banner (shown upon payment received) -->
+          <div id="qrSuccessBanner" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 0.85rem; margin-bottom: 1.25rem; text-align: left;">
+            <strong style="color: #065f46; font-size: 0.9rem; display: block;">✅ Payment Received</strong>
+            <span style="font-size: 0.78rem; color: #047857;" id="qrTxnRefText">Reference: pay_qr_...</span>
+            <span style="font-size: 0.78rem; color: #047857; display: block; font-weight: 700;" id="qrAmountReceivedText">Amount: ₹0.00</span>
+          </div>
+        </div>
+
+        <!-- PANEL B: COLLECT CASH -->
+        <div id="panelCashPayment" style="display: none;">
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; text-align: center; margin-bottom: 1.25rem;">
+            <span style="font-size: 0.82rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Exact Physical Cash to Collect:</span>
+            <h2 style="font-size: 2rem; font-weight: 800; color: #0f172a; margin: 0.25rem 0 0.85rem;" id="cashAmountToCollect">₹0.00</h2>
+            
+            <button type="button" id="btnConfirmCash" class="btn btn-primary" style="width: 100%; background: #059669; border-color: #059669; font-weight: 800; padding: 0.85rem; font-size: 1rem;">
+              💵 Cash Collected
+            </button>
+          </div>
+
+          <div id="cashSuccessBanner" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.85rem; margin-bottom: 1.25rem; text-align: left;">
+            <strong style="color: #1e40af; font-size: 0.9rem; display: block;">✓ Cash Collected by Rider</strong>
+            <span style="font-size: 0.78rem; color: #1e3a8a;" id="cashCollectedDetails">Recorded as outstanding cash remittance to admin.</span>
+          </div>
+        </div>
+
+        <!-- COMPLETE DELIVERY BUTTON (Enabled only after payment is resolved) -->
+        <button type="button" id="btnCompleteDeliveryAction" class="btn" style="width: 100%; padding: 0.95rem; font-size: 1rem; font-weight: 800; border-radius: 10px; background: #cbd5e1; color: #475569; cursor: not-allowed;" disabled>
+          Complete Delivery — Awaiting Payment
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let user = API.getUserSession();
+
+      if (!user || user.role !== 'ROLE_DELIVERY_PARTNER') {
+        window.location.replace('delivery-login.html');
+        return;
+      }
+
+      // Populate UI with Rider Info
+      document.getElementById('riderNameDisplay').textContent = user.fullName || 'Delivery Partner';
+      const riderSub = document.getElementById('riderSubtext');
+      if (riderSub) {
+        riderSub.textContent = `Vehicle: ${user.vehicleNumber || 'KA-03-EB-4412'} • Hub: Bangalore • Area: ${user.currentArea || 'Indiranagar'}`;
+      }
+
+      let currentOrders = [];
+      let pendingRequestId = null;
+      let activeOrderForModal = null;
+      let qrPollInterval = null;
+      let isOnline = true;
+
+      // Online/Offline Toggle
+      const onlineToggle = document.getElementById('onlineToggleSwitch');
+      const toggleLabel = document.getElementById('toggleLabel');
+      const statusPill = document.getElementById('statusIndicatorPill');
+
+      if (onlineToggle) {
+        onlineToggle.addEventListener('change', async (e) => {
+          isOnline = e.target.checked;
+          toggleLabel.textContent = isOnline ? 'ONLINE' : 'OFFLINE';
+          if (isOnline) {
+            statusPill.style.background = '#22c55e';
+            statusPill.textContent = '● Online & Accepting Deliveries';
+          } else {
+            statusPill.style.background = '#64748b';
+            statusPill.textContent = '○ Offline (Not Accepting Orders)';
+          }
+          try {
+            await API.toggleDeliveryOnline(user.userId, isOnline);
+          } catch (err) {
+            console.warn('Could not update online status:', err);
+          }
+        });
+      }
+
+      // Tab Switching
+      const tabActiveBtn = document.getElementById('tabActiveBtn');
+      const tabCollectionBtn = document.getElementById('tabCollectionBtn');
+      const tabHistoryBtn = document.getElementById('tabHistoryBtn');
+      const tabEarningsBtn = document.getElementById('tabEarningsBtn');
+      const sectionActive = document.getElementById('sectionActive');
+      const sectionCollection = document.getElementById('sectionCollection');
+      const sectionHistory = document.getElementById('sectionHistory');
+      const sectionEarnings = document.getElementById('sectionEarnings');
+
+      function switchTab(tab) {
+        tabActiveBtn.classList.remove('active');
+        tabCollectionBtn.classList.remove('active');
+        tabHistoryBtn.classList.remove('active');
+        tabEarningsBtn.classList.remove('active');
+
+        sectionActive.style.display = 'none';
+        sectionCollection.style.display = 'none';
+        sectionHistory.style.display = 'none';
+        sectionEarnings.style.display = 'none';
+
+        if (tab === 'active') {
+          tabActiveBtn.classList.add('active');
+          sectionActive.style.display = 'block';
+        } else if (tab === 'collection') {
+          tabCollectionBtn.classList.add('active');
+          sectionCollection.style.display = 'block';
+          renderCollectionTab(currentOrders);
+        } else if (tab === 'history') {
+          tabHistoryBtn.classList.add('active');
+          sectionHistory.style.display = 'block';
+        } else if (tab === 'earnings') {
+          tabEarningsBtn.classList.add('active');
+          sectionEarnings.style.display = 'block';
+        }
+      }
+
+      tabActiveBtn.addEventListener('click', () => switchTab('active'));
+      tabCollectionBtn.addEventListener('click', () => switchTab('collection'));
+      tabHistoryBtn.addEventListener('click', () => switchTab('history'));
+      tabEarningsBtn.addEventListener('click', () => switchTab('earnings'));
+
+      // Refresh Button
+      document.getElementById('refreshOrdersBtn').addEventListener('click', () => {
+        loadDeliveryDashboard();
+        checkPendingRequests();
+        loadCashRemittanceSummary();
+      });
+
+      // Logout
+      document.getElementById('logoutDeliveryBtn').addEventListener('click', () => {
+        if (confirm('Are you sure you want to log out from the delivery portal?')) {
+          API.clearSession();
+          window.location.replace('delivery-login.html');
+        }
+      });
+
+      // Initialize
+      loadDeliveryDashboard();
+      checkPendingRequests();
+      loadCashRemittanceSummary();
+
+      setInterval(() => {
+        if (isOnline) {
+          checkPendingRequests();
+        }
+      }, 5000);
+
+      // Fetch Cash Remittance Summary
+      async function loadCashRemittanceSummary() {
+        try {
+          const res = await API.getCashRemittanceSummary(user.userId);
+          if (res && res.data) {
+            const outAmt = Number(res.data.outstandingRemittance || 0);
+            document.getElementById('kpiCashRemittance').textContent = `₹${outAmt.toFixed(2)}`;
+            const collRemit = document.getElementById('collectionOutstandingRemittance');
+            if (collRemit) collRemit.textContent = `₹${outAmt.toFixed(2)}`;
+          }
+        } catch (e) {
+          console.warn('Remittance summary notice:', e);
+        }
+      }
+
+      // Load Delivery Dashboard Data
+      async function loadDeliveryDashboard() {
+        try {
+          const res = await API.getDeliveryDashboard(user.userId);
+          if (res && res.data) {
+            const data = res.data;
+            document.getElementById('kpiActiveOrders').textContent = data.activeDeliveries || 0;
+            document.getElementById('kpiDeliveredOrders').textContent = data.deliveredCount || 0;
+            document.getElementById('kpiEarnings').textContent = `₹${Number(data.estimatedEarnings || 0).toFixed(2)}`;
+            document.getElementById('totalPayoutDisplay').textContent = `₹${Number(data.estimatedEarnings || 0).toFixed(2)}`;
+            document.getElementById('kpiTotalTrips').textContent = data.totalTrips || 0;
+
+            currentOrders = data.orders || [];
+            renderActiveOrders(currentOrders);
+            renderCompletedOrders(currentOrders);
+            if (sectionCollection.style.display !== 'none') {
+              renderCollectionTab(currentOrders);
+            }
+            loadCashRemittanceSummary();
+          }
+        } catch (err) {
+          console.error('Error loading delivery dashboard:', err);
+        }
+      }
+
+      // Check Pending Requests
+      async function checkPendingRequests() {
+        try {
+          const res = await API.getPendingDeliveryRequests(user.userId);
+          if (res && res.data && res.data.length > 0) {
+            const pendingReq = res.data[0];
+            const modal = document.getElementById('incomingRequestModal');
+            if (!modal.classList.contains('open') && pendingReq.id !== pendingRequestId) {
+              showIncomingRequestModal(pendingReq);
+            }
+          }
+        } catch (err) {
+          console.warn('Pending requests check warning:', err);
+        }
+      }
+
+      function showIncomingRequestModal(order) {
+        pendingRequestId = order.id;
+        const modal = document.getElementById('incomingRequestModal');
+        const isEmergency = (order.priority === 'EMERGENCY');
+
+        const badge = document.getElementById('requestModalPriorityBadge');
+        if (isEmergency) {
+          badge.className = 'badge-emergency-pulse';
+          badge.innerHTML = '🚨 EMERGENCY MEDICINE PURCHASE';
+        } else {
+          badge.className = 'status-badge status-out';
+          badge.innerHTML = 'Standard Priority Delivery';
+        }
+
+        document.getElementById('reqPharmacyName').textContent = order.pharmacyName || 'Partner Pharmacy';
+        document.getElementById('reqPharmacyAddress').textContent = order.pharmacyAddress || 'Bangalore Store';
+        document.getElementById('reqPharmacyPhone').textContent = `Ph: ${order.pharmacyPhone || '080-22114455'}`;
+
+        document.getElementById('reqCustomerName').textContent = order.customerName || 'Patient';
+        document.getElementById('reqCustomerAddress').textContent = order.deliveryAddress || 'Address on file';
+        document.getElementById('reqCustomerPhone').textContent = `Ph: ${order.customerPhone || '9876543210'}`;
+        document.getElementById('reqDistanceKm').textContent = `Distance: ${Number(order.deliveryDistanceKm || 2.4).toFixed(1)} km`;
+
+        document.getElementById('reqPaymentMethod').textContent = order.paymentMethod || 'COD';
+        document.getElementById('reqPaymentAmount').textContent = (order.paymentStatus === 'PAID')
+          ? 'Prepaid Online ✓'
+          : `Collect: ₹${Number(order.totalAmount).toFixed(2)}`;
+
+        document.getElementById('reqRiderEarnings').textContent = `₹${Number(order.deliveryEarnings || 65).toFixed(2)}`;
+        document.getElementById('reqEstTime').textContent = `Est: ~${order.estimatedDeliveryMinutes || 20} mins`;
+
+        const itemsList = (order.items || []).map(i => `• ${i.medicineName} (x${i.quantity})`).join(', ') || 'Prescription Medicines';
+        document.getElementById('reqMedicinesList').textContent = itemsList;
+
+        modal.classList.add('open');
+      }
+
+      // Close / Reject Incoming Request
+      document.getElementById('closeRequestModalBtn').addEventListener('click', () => {
+        document.getElementById('incomingRequestModal').classList.remove('open');
+      });
+      document.getElementById('reqRejectBtn').addEventListener('click', async () => {
+        if (!pendingRequestId) return;
+        try {
+          await API.rejectDeliveryOrder(pendingRequestId, user.userId);
+          document.getElementById('incomingRequestModal').classList.remove('open');
+          loadDeliveryDashboard();
+        } catch (err) {
+          alert('Could not reject order: ' + err.message);
+        }
+      });
+
+      // Accept Incoming Request
+      document.getElementById('reqAcceptBtn').addEventListener('click', async () => {
+        if (!pendingRequestId) return;
+        const btn = document.getElementById('reqAcceptBtn');
+        btn.disabled = true;
+        btn.textContent = 'Accepting...';
+
+        try {
+          await API.acceptDeliveryOrder(pendingRequestId, user.userId);
+          document.getElementById('incomingRequestModal').classList.remove('open');
+          alert('✓ Order Accepted! Proceed to pharmacy for pickup.');
+          loadDeliveryDashboard();
+        } catch (err) {
+          alert('Acceptance failed: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '✅ Accept & Start Delivery →';
+        }
+      });
+
+      // Render Active Deliveries
+      function renderActiveOrders(orders) {
+        const container = document.getElementById('deliveriesContainer');
+        const activeOrders = orders.filter(o => o.status !== 'DELIVERED' && o.status !== 'CANCELLED');
+
+        if (activeOrders.length === 0) {
+          container.innerHTML = `
+            <div style="background: white; border-radius: var(--radius-lg); padding: 3.5rem 1rem; text-align: center; border: 1px dashed #cbd5e1;">
+              <span style="font-size: 3rem; display: block; margin-bottom: 0.5rem;">🛵</span>
+              <h4 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">No Active Deliveries Right Now</h4>
+              <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.25rem;">Stay online! When nearby pharmacies have medicine packages ready, requests will appear here automatically.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = activeOrders.map(order => {
+          const isEmergency = (order.priority === 'EMERGENCY');
+          const isReadyOrAssigned = (order.status === 'PARTNER_ASSIGNED' || order.status === 'READY_FOR_PICKUP' || order.status === 'PREPARING');
+          const isPickedUp = (order.status === 'PICKED_UP');
+          const isOutForDelivery = (order.status === 'OUT_FOR_DELIVERY');
+          const isPaid = (order.paymentStatus === 'PAID' || order.paymentStatus === 'COD_COLLECTED');
+
+          let statusClass = 'status-assigned';
+          let statusLabel = 'Ready for Pickup';
+          if (isPickedUp) { statusClass = 'status-out'; statusLabel = 'Picked Up from Pharmacy'; }
+          else if (isOutForDelivery) { statusClass = 'status-out'; statusLabel = 'Out for Delivery'; }
+
+          let actionControls = '';
+          if (isReadyOrAssigned) {
+            actionControls = `
+              <button class="btn btn-primary btn-advance-order" data-id="${order.id}" data-next="PICKED_UP" style="background: #2563eb; font-size: 0.88rem; padding: 0.65rem 1.25rem; font-weight: 700;">
+                📦 Confirm Pickup from Pharmacy →
+              </button>
+            `;
+          } else if (isPickedUp) {
+            actionControls = `
+              <button class="btn btn-primary btn-advance-order" data-id="${order.id}" data-next="OUT_FOR_DELIVERY" style="background: #0284c7; font-size: 0.88rem; padding: 0.65rem 1.25rem; font-weight: 700;">
+                🚚 Start Delivery to Patient →
+              </button>
+            `;
+          } else if (isOutForDelivery) {
+            if (!isPaid) {
+              actionControls = `
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
+                  <button class="btn btn-primary btn-open-collect-payment" data-id="${order.id}" style="background: #2563eb; border-color: #2563eb; font-size: 0.88rem; padding: 0.65rem 1.25rem; font-weight: 800;">
+                    💳 Collect Payment (Cash / QR)
+                  </button>
+                  <button class="btn btn-primary btn-complete-order" data-id="${order.id}" style="background: #cbd5e1; border-color: #cbd5e1; color: #475569; font-size: 0.88rem; padding: 0.65rem 1.25rem; font-weight: 800; cursor: not-allowed;" title="Payment must be collected first" disabled>
+                    Complete Delivery — Awaiting Payment
+                  </button>
+                </div>
+              `;
+            } else {
+              actionControls = `
+                <button class="btn btn-primary btn-complete-order" data-id="${order.id}" style="background: #059669; border-color: #059669; font-size: 0.88rem; padding: 0.65rem 1.25rem; font-weight: 800;">
+                  ✅ Hand Over & Complete Delivery
+                </button>
+              `;
+            }
+          }
+
+          const itemsList = (order.items || []).map(i => `• ${i.medicineName} (x${i.quantity})`).join(', ') || 'Prescription Medicines';
+
+          return `
+            <div class="order-delivery-card ${isEmergency ? 'emergency-card' : ''}">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                    <span style="font-size: 0.88rem; font-weight: 800; color: #2563eb;">ORDER ${order.orderNumber}</span>
+                    ${isEmergency ? '<span class="badge-emergency-pulse">🚨 EMERGENCY</span>' : ''}
+                    <span class="status-badge ${statusClass}">${statusLabel}</span>
+                  </div>
+                  <small style="color: #64748b; font-size: 0.75rem;">Placed: ${order.createdAt ? new Date(order.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Today'}</small>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">
+                    ₹${Number(order.totalAmount).toFixed(2)}
+                  </div>
+                  <span style="font-size: 0.75rem; font-weight: 700; color: ${isPaid ? '#059669' : '#d97706'};">
+                    ${isPaid ? 'Payment Verified ✓' : 'Collect Payment on Delivery'}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Pickup Step -->
+              <div class="route-step">
+                <div class="route-dot" style="background: #059669;">1</div>
+                <div>
+                  <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #059669;">Pickup Pharmacy</span>
+                  <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-main); margin-top: 0.15rem;">${order.pharmacyName || 'Partner Pharmacy'}</h4>
+                  <p style="font-size: 0.85rem; color: var(--text-muted);">${order.pharmacyAddress || 'Bangalore Store'} • Ph: ${order.pharmacyPhone || '080-22114455'}</p>
+                </div>
+              </div>
+
+              <!-- Delivery Step -->
+              <div class="route-step" style="margin-bottom: 1.25rem;">
+                <div class="route-dot" style="background: #2563eb;">2</div>
+                <div>
+                  <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #2563eb;">Deliver to Customer</span>
+                  <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--text-main); margin-top: 0.15rem;">${order.customerName}</h4>
+                  <p style="font-size: 0.85rem; color: var(--text-muted);">${order.deliveryAddress} • Ph: ${order.customerPhone}</p>
+                </div>
+              </div>
+
+              <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <strong>Prescription Contents:</strong> ${itemsList}
+                </div>
+                <div>
+                  <span style="font-size: 0.8rem; color: #64748b;">Rider Earning:</span>
+                  <strong style="color: #059669; font-size: 0.95rem;">₹${Number(order.deliveryEarnings || 65).toFixed(2)}</strong>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end;">
+                ${actionControls}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Attach Advance Order events
+        container.querySelectorAll('.btn-advance-order').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const orderId = btn.getAttribute('data-id');
+            const nextStatus = btn.getAttribute('data-next');
+
+            btn.disabled = true;
+            btn.textContent = 'Updating Delivery Status...';
+
+            try {
+              await API.updateDeliveryStatus(orderId, nextStatus, user.userId);
+              loadDeliveryDashboard();
+            } catch (err) {
+              alert('Status update failed: ' + err.message);
+              btn.disabled = false;
+            }
+          });
+        });
+
+        // Attach Open Payment Collection Modal
+        container.querySelectorAll('.btn-open-collect-payment').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const orderId = Number(btn.getAttribute('data-id'));
+            const order = currentOrders.find(o => o.id === orderId);
+            if (order) openPaymentCollectionModal(order);
+          });
+        });
+
+        // Attach Complete Order events
+        container.querySelectorAll('.btn-complete-order').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const orderId = Number(btn.getAttribute('data-id'));
+            if (confirm('Confirm delivery handover of medicines to the customer?')) {
+              try {
+                await API.completeDeliveryOrder(orderId, user.userId);
+                alert('✓ Medicine delivery successfully completed! Earnings added to your account.');
+                loadDeliveryDashboard();
+              } catch (err) {
+                alert('Delivery completion notice: ' + err.message);
+              }
+            }
+          });
+        });
+      }
+
+      // Render Dedicated Payment Collection Tab (Requirement 6)
+      function renderCollectionTab(orders) {
+        const container = document.getElementById('collectionOrdersContainer');
+        if (!container) return;
+
+        if (orders.length === 0) {
+          container.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 2rem;">No orders currently assigned.</p>`;
+          return;
+        }
+
+        container.innerHTML = orders.map(order => {
+          const isPaid = (order.paymentStatus === 'PAID' || order.paymentStatus === 'COD_COLLECTED');
+          const isDelivered = (order.status === 'DELIVERED');
+
+          return `
+            <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; background: ${isPaid ? '#f8fafc' : '#ffffff'};">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <div>
+                  <strong style="color: #1e3a8a; font-size: 1.05rem;">Order #${order.orderNumber}</strong>
+                  <span style="font-size: 0.8rem; color: #64748b; display: block;">Customer: ${escapeHtml(order.customerName)} • Ph: ${escapeHtml(order.customerPhone)}</span>
+                  <span style="font-size: 0.8rem; color: #64748b;">Pharmacy: ${escapeHtml(order.pharmacyName || 'Partner Pharmacy')}</span>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 1.2rem; font-weight: 800; color: #059669;">₹${Number(order.totalAmount).toFixed(2)}</div>
+                  <span style="font-size: 0.75rem; font-weight: 800; padding: 2px 8px; border-radius: 9999px; background: ${isPaid ? '#ecfdf5' : '#fef3c7'}; color: ${isPaid ? '#047857' : '#92400e'}; border: 1px solid ${isPaid ? '#a7f3d0' : '#fde68a'};">
+                    ${isPaid ? 'PAID / COLLECTED' : 'PENDING COLLECTION'}
+                  </span>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="font-size: 0.82rem; color: #64748b;">
+                  Payment Method: <strong>${order.paymentMethod || 'COD'}</strong> • Delivery Status: <strong>${order.status}</strong>
+                </div>
+                <div>
+                  ${!isPaid ? `
+                    <button type="button" class="btn btn-primary btn-tab-collect" data-id="${order.id}" style="background: #2563eb; font-size: 0.82rem; padding: 0.45rem 1rem; font-weight: 800;">
+                      💳 Collect Payment (Cash / QR) →
+                    </button>
+                  ` : `
+                    <span style="color: #059669; font-size: 0.85rem; font-weight: 700;">✓ Payment Resolved</span>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        container.querySelectorAll('.btn-tab-collect').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const orderId = Number(btn.getAttribute('data-id'));
+            const order = currentOrders.find(o => o.id === orderId);
+            if (order) openPaymentCollectionModal(order);
+          });
+        });
+      }
+
+      // Open Dedicated Payment Collection Modal (Requirement 3 & 6 Interface)
+      function openPaymentCollectionModal(order) {
+        activeOrderForModal = order;
+        const modal = document.getElementById('payOnDeliveryModal');
+
+        document.getElementById('podOrderNumber').textContent = order.orderNumber;
+        document.getElementById('podAmountDisplay').textContent = `₹${Number(order.totalAmount).toFixed(2)}`;
+        document.getElementById('cashAmountToCollect').textContent = `₹${Number(order.totalAmount).toFixed(2)}`;
+
+        // Reset views
+        document.getElementById('panelQrPayment').style.display = 'block';
+        document.getElementById('panelCashPayment').style.display = 'none';
+        document.getElementById('btnChooseQr').style.background = '#eff6ff';
+        document.getElementById('btnChooseQr').style.borderColor = '#2563eb';
+        document.getElementById('btnChooseCash').style.background = 'white';
+        document.getElementById('btnChooseCash').style.borderColor = '#cbd5e1';
+
+        document.getElementById('qrCodeWrapper').style.display = 'none';
+        document.getElementById('btnGenerateQr').style.display = 'inline-block';
+        document.getElementById('qrHelpText').textContent = 'The actual QR will appear here after the gateway creates it for this order.';
+        document.getElementById('qrStatusDot').style.background = '#d97706';
+        document.getElementById('qrStatusText').textContent = 'Awaiting payment';
+        document.getElementById('qrSuccessBanner').style.display = 'none';
+        document.getElementById('cashSuccessBanner').style.display = 'none';
+
+        // Complete delivery button state
+        const isPaid = (order.paymentStatus === 'PAID' || order.paymentStatus === 'COD_COLLECTED');
+        updateCompleteDeliveryButton(isPaid);
+
+        if (qrPollInterval) clearInterval(qrPollInterval);
+
+        modal.classList.add('open');
+      }
+
+      function updateCompleteDeliveryButton(isPaid) {
+        const btn = document.getElementById('btnCompleteDeliveryAction');
+        if (isPaid) {
+          btn.disabled = false;
+          btn.style.background = '#059669';
+          btn.style.color = '#ffffff';
+          btn.style.cursor = 'pointer';
+          btn.textContent = '✅ Complete Delivery Handover';
+        } else {
+          btn.disabled = true;
+          btn.style.background = '#cbd5e1';
+          btn.style.color = '#475569';
+          btn.style.cursor = 'not-allowed';
+          btn.textContent = 'Complete Delivery — Awaiting Payment';
+        }
+      }
+
+      // Toggle Panels inside Modal
+      document.getElementById('btnChooseQr').addEventListener('click', () => {
+        document.getElementById('panelQrPayment').style.display = 'block';
+        document.getElementById('panelCashPayment').style.display = 'none';
+        document.getElementById('btnChooseQr').style.background = '#eff6ff';
+        document.getElementById('btnChooseQr').style.borderColor = '#2563eb';
+        document.getElementById('btnChooseCash').style.background = 'white';
+        document.getElementById('btnChooseCash').style.borderColor = '#cbd5e1';
+      });
+
+      document.getElementById('btnChooseCash').addEventListener('click', () => {
+        document.getElementById('panelQrPayment').style.display = 'none';
+        document.getElementById('panelCashPayment').style.display = 'block';
+        document.getElementById('btnChooseCash').style.background = '#eff6ff';
+        document.getElementById('btnChooseCash').style.borderColor = '#2563eb';
+        document.getElementById('btnChooseQr').style.background = 'white';
+        document.getElementById('btnChooseQr').style.borderColor = '#cbd5e1';
+      });
+
+      // Generate Payment QR Button (Option B)
+      document.getElementById('btnGenerateQr').addEventListener('click', async () => {
+        if (!activeOrderForModal) return;
+        const btn = document.getElementById('btnGenerateQr');
+        btn.disabled = true;
+        btn.textContent = 'Creating Gateway QR...';
+
+        try {
+          const res = await API.generateDeliveryQr(activeOrderForModal.id, user.userId);
+          if (res && res.data) {
+            const data = res.data;
+            document.getElementById('podUpiQrImg').src = data.qrImageUrl;
+            document.getElementById('qrCodeWrapper').style.display = 'block';
+            btn.style.display = 'none';
+            document.getElementById('qrHelpText').textContent = 'Scan using Google Pay, PhonePe, Paytm, or any UPI app to pay.';
+
+            // Start polling for payment verification
+            startQrPolling(activeOrderForModal.id);
+          }
+        } catch (err) {
+          alert('Could not generate QR: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = '📷 Generate Payment QR';
+        }
+      });
+
+      // Polling helper
+      function startQrPolling(orderId) {
+        if (qrPollInterval) clearInterval(qrPollInterval);
+        qrPollInterval = setInterval(async () => {
+          try {
+            const statusRes = await API.checkDeliveryQrStatus(orderId);
+            if (statusRes && statusRes.data && statusRes.data.paid) {
+              clearInterval(qrPollInterval);
+              onQrPaymentVerified(statusRes.data);
+            }
+          } catch (e) {}
+        }, 3000);
+      }
+
+      // Check Status Button
+      document.getElementById('btnCheckQrStatus').addEventListener('click', async () => {
+        if (!activeOrderForModal) return;
+        const btn = document.getElementById('btnCheckQrStatus');
+        btn.disabled = true;
+        btn.textContent = 'Checking...';
+
+        try {
+          const statusRes = await API.checkDeliveryQrStatus(activeOrderForModal.id);
+          if (statusRes && statusRes.data && statusRes.data.paid) {
+            if (qrPollInterval) clearInterval(qrPollInterval);
+            onQrPaymentVerified(statusRes.data);
+          } else {
+            alert('Payment not received yet. Customer needs to complete the UPI payment on their phone.');
+          }
+        } catch (e) {
+          alert('Status check error: ' + e.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '🔄 Check Status';
+        }
+      });
+
+      function onQrPaymentVerified(data) {
+        document.getElementById('qrStatusDot').style.background = '#059669';
+        document.getElementById('qrStatusText').textContent = 'Payment Received ✓';
+        document.getElementById('qrStatusText').style.color = '#065f46';
+        document.getElementById('qrTxnRefText').textContent = `Transaction Reference: ${data.transactionReference || 'pay_qr_verified'}`;
+        document.getElementById('qrAmountReceivedText').textContent = `Amount Received: ₹${Number(data.amount || 0).toFixed(2)}`;
+        document.getElementById('qrSuccessBanner').style.display = 'block';
+
+        updateCompleteDeliveryButton(true);
+        loadCashRemittanceSummary();
+      }
+
+      // Option A: Confirm Cash Collected
+      document.getElementById('btnConfirmCash').addEventListener('click', async () => {
+        if (!activeOrderForModal) return;
+        const btn = document.getElementById('btnConfirmCash');
+        btn.disabled = true;
+        btn.textContent = 'Recording Cash Collection...';
+
+        try {
+          await API.confirmCashCollected(activeOrderForModal.id, user.userId, activeOrderForModal.totalAmount);
+          btn.textContent = '✓ Cash Received';
+          document.getElementById('cashCollectedDetails').textContent = `Collected ₹${Number(activeOrderForModal.totalAmount).toFixed(2)}. Recorded in outstanding remittance liability.`;
+          document.getElementById('cashSuccessBanner').style.display = 'block';
+
+          updateCompleteDeliveryButton(true);
+          loadCashRemittanceSummary();
+        } catch (err) {
+          alert('Error recording cash collection: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = '💵 Cash Collected';
+        }
+      });
+
+      // Complete Delivery Handover Action
+      document.getElementById('btnCompleteDeliveryAction').addEventListener('click', async () => {
+        if (!activeOrderForModal) return;
+        const btn = document.getElementById('btnCompleteDeliveryAction');
+        btn.disabled = true;
+        btn.textContent = 'Finalizing Handover...';
+
+        try {
+          await API.completeDeliveryOrder(activeOrderForModal.id, user.userId);
+          if (qrPollInterval) clearInterval(qrPollInterval);
+          document.getElementById('payOnDeliveryModal').classList.remove('open');
+          alert('🎉 Medicine delivery successfully completed! Earnings added to your account.');
+          loadDeliveryDashboard();
+        } catch (err) {
+          alert('Could not complete delivery: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = '✅ Complete Delivery Handover';
+        }
+      });
+
+      document.getElementById('closePayModalBtn').addEventListener('click', () => {
+        if (qrPollInterval) clearInterval(qrPollInterval);
+        document.getElementById('payOnDeliveryModal').classList.remove('open');
+      });
+
+      // Render Completed History
+      function renderCompletedOrders(orders) {
+        const completedBody = document.getElementById('completedOrdersTableBody');
+        const completedOrders = orders.filter(o => o.status === 'DELIVERED');
+
+        if (completedOrders.length === 0) {
+          completedBody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No completed deliveries recorded yet.</td></tr>`;
+        } else {
+          completedBody.innerHTML = completedOrders.map(o => `
+            <tr>
+              <td>
+                ${o.priority === 'EMERGENCY' ? '<span class="badge-emergency-pulse" style="font-size: 0.68rem; padding: 2px 6px;">EMERGENCY</span>' : '<span style="font-size: 0.75rem; color: #64748b;">Normal</span>'}
+              </td>
+              <td style="font-weight: 700; color: #2563eb;">${o.orderNumber}</td>
+              <td>${escapeHtml(o.customerName)}<br><small style="color: var(--text-muted);">${escapeHtml(o.customerPhone)}</small></td>
+              <td style="max-width: 220px; font-size: 0.85rem;">${escapeHtml(o.deliveryAddress)}</td>
+              <td>${escapeHtml(o.pharmacyName || 'Partner Pharmacy')}</td>
+              <td style="font-weight: 700;">₹${Number(o.totalAmount).toFixed(2)}</td>
+              <td>
+                <span style="font-size: 0.75rem; font-weight: 700; color: #1e40af; background: #eff6ff; padding: 2px 7px; border-radius: 4px;">
+                  ${o.paymentMethod || 'COD Cash'}
+                </span>
+              </td>
+              <td style="font-weight: 800; color: #059669;">+₹${Number(o.deliveryEarnings || 65).toFixed(2)}</td>
+              <td style="font-size: 0.82rem; color: var(--text-muted);">${o.deliveredAt ? new Date(o.deliveredAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Recently'}</td>
+              <td><span class="status-badge status-delivered">✓ Delivered</span></td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+    });
+  </script>
+</body>
+</html>

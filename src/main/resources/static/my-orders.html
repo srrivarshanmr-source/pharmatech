@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders & Order History – PharmaTech</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/common.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'><path d='M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z'/></svg>">
+  <style>
+    body {
+      background: #f8fafc;
+      min-height: 100vh;
+    }
+    .orders-wrapper {
+      max-width: 1050px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .order-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      transition: box-shadow 0.2s ease;
+    }
+    .order-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+    .order-card-header {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-light);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .order-card-body {
+      padding: 1.5rem;
+    }
+    .status-badge-custom {
+      display: inline-block;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .status-active-pulse {
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+    .status-delivered-pill {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .status-cancelled-pill {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+    .payment-pill-success {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+    .payment-pill-pending {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+    .order-items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .order-items-table th {
+      text-align: left;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .order-items-table td {
+      padding: 0.5rem 0;
+      font-size: 0.88rem;
+      border-bottom: 1px dashed #f1f5f9;
+    }
+    .tab-btn {
+      padding: 0.65rem 1.25rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px dashed var(--border-light);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header style="background: white; border-bottom: 1px solid var(--border-light); padding: 1rem 0; position: sticky; top: 0; z-index: 50;">
+    <div style="max-width: 1050px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+      <a href="index.html" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+        <span style="font-size: 1.6rem;">💊</span>
+        <div>
+          <span style="font-size: 1.3rem; font-weight: 800; color: var(--primary-dark); letter-spacing: -0.5px;">PharmaTech</span>
+          <span style="font-size: 0.7rem; display: block; color: var(--text-muted); font-weight: 600;">MY ORDERS & HISTORY</span>
+        </div>
+      </a>
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span id="customerGreeting" style="font-size: 0.88rem; font-weight: 700; color: var(--text-main);">Hi, Customer</span>
+        <a href="index.html" class="btn btn-outline-primary" style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">
+          🛒 Order Medicines
+        </a>
+        <button id="btnLogout" class="btn" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 0.8rem; padding: 0.4rem 0.75rem; border-radius: var(--radius-md);">
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="orders-wrapper">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem;">My Medicine Orders</h1>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Track active doorstep deliveries and review past pharmacy prescriptions & invoices.</p>
+      </div>
+      <button id="btnRefreshOrders" class="btn btn-outline-primary" style="font-size: 0.85rem; padding: 0.45rem 0.95rem;">
+        🔄 Refresh Orders
+      </button>
+    </div>
+
+    <!-- Tab navigation -->
+    <div style="display: flex; border-bottom: 2px solid var(--border-light); margin-bottom: 1.5rem;">
+      <button class="tab-btn active" id="tabActiveOrders" onclick="switchOrderTab('active')">
+        🚚 Active Deliveries (<span id="countActiveOrders">0</span>)
+      </button>
+      <button class="tab-btn" id="tabPastOrders" onclick="switchOrderTab('past')">
+        📁 Past Orders & History (<span id="countPastOrders">0</span>)
+      </button>
+    </div>
+
+    <!-- Active Deliveries Container -->
+    <div id="activeOrdersContainer">
+      <div class="empty-state" id="emptyActive">
+        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">📦</span>
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.35rem;">No Active Deliveries</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">You don't have any orders currently being prepared or delivered.</p>
+        <a href="index.html" class="btn btn-primary" style="padding: 0.55rem 1.25rem; font-weight: 700;">
+          Browse Available Medicines
+        </a>
+      </div>
+      <div id="activeOrdersList"></div>
+    </div>
+
+    <!-- Past Orders Container -->
+    <div id="pastOrdersContainer" style="display: none;">
+      <div class="empty-state" id="emptyPast">
+        <span style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;">📜</span>
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.35rem;">No Past Orders Found</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Your completed and archive deliveries will appear here.</p>
+      </div>
+      <div id="pastOrdersList"></div>
+    </div>
+
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    let activeCustomer = null;
+    let allOrders = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Mandatory Customer Login Check
+      activeCustomer = API.getUserSession();
+
+      if (!activeCustomer || activeCustomer.role !== 'ROLE_CUSTOMER' || !(activeCustomer.id || activeCustomer.userId)) {
+        window.location.replace('customer-login.html?returnUrl=my-orders.html');
+        return;
+      }
+      activeCustomer.id = activeCustomer.id || activeCustomer.userId;
+      activeCustomer.userId = activeCustomer.id;
+
+      document.getElementById('customerGreeting').textContent = `Hi, ${activeCustomer.fullName || 'Customer'}`;
+
+      document.getElementById('btnLogout').addEventListener('click', () => {
+        API.clearSession();
+        window.location.href = 'index.html';
+      });
+
+      document.getElementById('btnRefreshOrders').addEventListener('click', loadCustomerOrders);
+
+      await loadCustomerOrders();
+    });
+
+    function switchOrderTab(tab) {
+      const activeTabBtn = document.getElementById('tabActiveOrders');
+      const pastTabBtn = document.getElementById('tabPastOrders');
+      const activeContainer = document.getElementById('activeOrdersContainer');
+      const pastContainer = document.getElementById('pastOrdersContainer');
+
+      if (tab === 'active') {
+        activeTabBtn.classList.add('active');
+        pastTabBtn.classList.remove('active');
+        activeContainer.style.display = 'block';
+        pastContainer.style.display = 'none';
+      } else {
+        pastTabBtn.classList.add('active');
+        activeTabBtn.classList.remove('active');
+        pastContainer.style.display = 'block';
+        activeContainer.style.display = 'none';
+      }
+    }
+
+    async function loadCustomerOrders() {
+      if (!activeCustomer) return;
+      try {
+        const res = await fetch(`/api/customer/orders/customer/${activeCustomer.id}`);
+        const data = await res.json();
+        if (data.success && data.data) {
+          allOrders = data.data;
+          renderOrders(allOrders);
+        }
+      } catch (err) {
+        console.error('Failed to load customer orders:', err);
+      }
+    }
+
+    function renderOrders(orders) {
+      const activeList = document.getElementById('activeOrdersList');
+      const pastList = document.getElementById('pastOrdersList');
+      const emptyActive = document.getElementById('emptyActive');
+      const emptyPast = document.getElementById('emptyPast');
+
+      const activeStatuses = ['ORDER_PLACED', 'PHARMACY_ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP', 'PARTNER_ASSIGNED', 'ARRIVED_AT_PHARMACY', 'PICKED_UP', 'OUT_FOR_DELIVERY'];
+      const activeOrders = orders.filter(o => activeStatuses.includes((o.status || '').toUpperCase()));
+      const pastOrders = orders.filter(o => !activeStatuses.includes((o.status || '').toUpperCase()));
+
+      document.getElementById('countActiveOrders').textContent = activeOrders.length;
+      document.getElementById('countPastOrders').textContent = pastOrders.length;
+
+      // Render Active
+      if (activeOrders.length === 0) {
+        emptyActive.style.display = 'block';
+        activeList.innerHTML = '';
+      } else {
+        emptyActive.style.display = 'none';
+        activeList.innerHTML = activeOrders.map(order => renderOrderCard(order, true)).join('');
+      }
+
+      // Render Past
+      if (pastOrders.length === 0) {
+        emptyPast.style.display = 'block';
+        pastList.innerHTML = '';
+      } else {
+        emptyPast.style.display = 'none';
+        pastList.innerHTML = pastOrders.map(order => renderOrderCard(order, false)).join('');
+      }
+    }
+
+    function renderOrderCard(order, isActive) {
+      const createdTime = order.createdAt ? new Date(order.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Recently';
+      const isEmergency = order.priority === 'EMERGENCY';
+      const items = order.items || [];
+      const statusText = formatOrderStatus(order.status);
+      const paymentBadge = formatPaymentBadge(order.paymentStatus, order.paymentMethod);
+
+      return `
+        <div class="order-card" style="${isEmergency ? 'border-left: 5px solid #ef4444;' : 'border-left: 5px solid #059669;'}">
+          <div class="order-card-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.2rem;">
+                <strong style="font-size: 1.05rem; color: var(--text-main); font-family: monospace;">${order.orderNumber}</strong>
+                ${isEmergency ? '<span style="background: #ef4444; color: white; font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 9999px;">🚨 EMERGENCY</span>' : '<span style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 9999px;">Standard</span>'}
+                <span class="status-badge-custom ${isActive ? 'status-active-pulse' : (order.status === 'DELIVERED' ? 'status-delivered-pill' : 'status-cancelled-pill')}">
+                  ${statusText}
+                </span>
+              </div>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">Placed on ${createdTime}</span>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Total Amount</span>
+              <strong style="font-size: 1.25rem; color: var(--primary-dark);">₹${Number(order.totalAmount || 0).toFixed(2)}</strong>
+            </div>
+          </div>
+
+          <div class="order-card-body">
+            <!-- Pharmacy Info -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.65rem 0.85rem; border-radius: 8px; margin-bottom: 0.85rem; font-size: 0.85rem;">
+              <div>
+                <span style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700;">Dispensing Pharmacy:</span>
+                <strong style="color: var(--primary-dark); display: block;">${order.pharmacyName || 'Partner Pharmacy'}</strong>
+                <span style="color: #64748b; font-size: 0.78rem;">${order.pharmacyAddress || 'Registered Location'}</span>
+              </div>
+              <div style="text-align: right;">
+                <span style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; display: block;">Payment:</span>
+                ${paymentBadge}
+              </div>
+            </div>
+
+            <!-- Items Table -->
+            <table class="order-items-table">
+              <thead>
+                <tr>
+                  <th>Prescribed Medicine</th>
+                  <th style="text-align: center;">Qty</th>
+                  <th style="text-align: right;">Unit Price</th>
+                  <th style="text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map(it => `
+                  <tr>
+                    <td><strong>${it.medicineName}</strong></td>
+                    <td style="text-align: center;">${it.quantity}</td>
+                    <td style="text-align: right;">₹${Number(it.unitPrice || 0).toFixed(2)}</td>
+                    <td style="text-align: right; font-weight: 700;">₹${Number(it.totalPrice || 0).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <!-- Footer Action Button -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 1rem; margin-top: 0.5rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div style="font-size: 0.8rem; color: #64748b;">
+                ${order.deliveryPartnerName ? `🚚 Assigned Rider: <strong>${escapeHtml(order.deliveryPartnerName)}</strong> (${escapeHtml(order.vehicleNumber || 'Electric Scooter')}) • 📍 ${order.deliveryDistanceKm ? Number(order.deliveryDistanceKm).toFixed(1) : '7.1'} km Route` : (isActive ? `⏳ Dispatched to Delivery Fleet • Awaiting Rider Acceptance (${order.deliveryDistanceKm ? Number(order.deliveryDistanceKm).toFixed(1) : '7.1'} km • ${escapeHtml(order.pharmacyName || 'SITRA Hub')})` : `Delivery completed (${order.deliveryDistanceKm ? Number(order.deliveryDistanceKm).toFixed(1) : '7.1'} km)`)}
+              </div>
+              <div>
+                ${isActive ? `
+                  <a href="order-tracking.html?orderId=${order.id}&orderNumber=${encodeURIComponent(order.orderNumber)}" class="btn btn-primary" style="font-size: 0.85rem; padding: 0.5rem 1.15rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; background: #059669; border-color: #059669; text-decoration: none;">
+                    🚚 Track Order
+                  </a>
+                ` : `
+                  <a href="order-tracking.html?orderId=${order.id}&orderNumber=${encodeURIComponent(order.orderNumber)}" class="btn btn-outline-primary" style="font-size: 0.85rem; padding: 0.45rem 1rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none;">
+                    📄 View Order Details
+                  </a>
+                `}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function formatOrderStatus(status) {
+      if (!status) return 'Placed';
+      switch (status.toUpperCase()) {
+        case 'PAYMENT_PENDING': return '⏳ Verifying Payment';
+        case 'ORDER_PLACED': return 'Order Placed';
+        case 'PHARMACY_ACCEPTED': return 'Pharmacy Accepted';
+        case 'PREPARING': return 'Preparing Medicines';
+        case 'READY_FOR_PICKUP': return 'Ready for Pickup';
+        case 'PARTNER_ASSIGNED': return 'Rider Assigned';
+        case 'ARRIVED_AT_PHARMACY': return 'Rider at Pharmacy';
+        case 'PICKED_UP': return 'Picked Up';
+        case 'OUT_FOR_DELIVERY': return 'Out for Delivery';
+        case 'DELIVERED': return '✓ Delivered';
+        case 'CANCELLED': return '✕ Cancelled';
+        default: return status;
+      }
+    }
+
+    function formatPaymentBadge(paymentStatus, paymentMethod) {
+      const method = (paymentMethod || 'PAYMENT').toUpperCase();
+      const status = (paymentStatus || 'PENDING').toUpperCase();
+
+      if (status === 'TEST_SUCCESS' || status === 'PAID' || status === 'DEMO_PAID') {
+        return `<span class="payment-pill-success">✓ ${method} Paid</span>`;
+      }
+      if (status === 'COD_COLLECTED') {
+        return `<span class="payment-pill-success">✓ Cash Collected</span>`;
+      }
+      if (status === 'COD_PENDING' || status === 'PENDING_COLLECTION') {
+        return `<span class="payment-pill-pending">Pay on Delivery (COD)</span>`;
+      }
+      if (status === 'PENDING_ADMIN_VERIFICATION') {
+        return `<span class="payment-pill-pending" style="background: #fef3c7; color: #92400e;">⏳ Admin Verification Pending</span>`;
+      }
+      if (status === 'TEST_FAILED') {
+        return `<span style="background: #fee2e2; color: #b91c1c; font-size: 0.75rem; padding: 0.2rem 0.55rem; border-radius: 6px; font-weight: 700;">✕ Payment Failed</span>`;
+      }
+      return `<span class="payment-pill-pending">${method} Pending</span>`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+  </script>
+</body>
+</html>

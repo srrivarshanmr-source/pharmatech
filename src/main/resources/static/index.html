@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmaTech – Online Medicine & Healthcare Store</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'><path d='M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z'/></svg>">
+  <style>
+    @keyframes pulseAlert {
+      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .badge-emergency-pulse {
+      background: #ef4444;
+      color: white;
+      font-weight: 800;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      animation: pulseAlert 1.5s infinite;
+      letter-spacing: 0.5px;
+    }
+    .badge-normal-priority {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      display: inline-block;
+    }
+
+    /* Stepper for Live Order Tracking */
+    .stepper-container {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin: 2rem 0 1.5rem;
+    }
+    .stepper-container::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      right: 20px;
+      height: 4px;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+    .stepper-progress {
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      height: 4px;
+      background: #059669;
+      z-index: 2;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+    .step-item {
+      position: relative;
+      z-index: 3;
+      text-align: center;
+      flex: 1;
+    }
+    .step-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: white;
+      border: 3px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.82rem;
+      margin: 0 auto 0.5rem;
+      color: #64748b;
+      transition: all 0.3s;
+    }
+    .step-item.active .step-circle {
+      border-color: #059669;
+      background: #059669;
+      color: white;
+      box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.2);
+    }
+    .step-item.completed .step-circle {
+      border-color: #059669;
+      background: #059669;
+      color: white;
+    }
+    .step-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+    }
+    .step-item.active .step-label {
+      color: #059669;
+      font-weight: 800;
+    }
+
+    /* Nearby Search Results Card */
+    .nearby-result-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      padding: 1.25rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+    .nearby-result-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: #10b981;
+    }
+
+    .location-suggestion-item {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.15s;
+    }
+    .location-suggestion-item:hover {
+      background: #f0fdf4;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar-wrapper">
+    <div class="navbar-container">
+      
+      <!-- Logo -->
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+          </svg>
+        </div>
+        <div class="brand-text">Pharma<span>Tech</span></div>
+      </a>
+
+      <!-- Location Selector with Clickable Modal Trigger -->
+      <div class="location-selector" id="openLocationModalBtn" style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: var(--radius-md);" title="Click to change your delivery location">
+        <svg width="18" height="18" fill="none" stroke="#059669" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        <div style="display: flex; flex-direction: column; text-align: left;">
+          <span style="font-size: 0.68rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Delivery Location</span>
+          <strong id="currentLocationDisplay" style="font-size: 0.85rem; color: #0f172a;">Indiranagar, Bangalore</strong>
+        </div>
+        <span style="font-size: 0.75rem; color: #94a3b8; margin-left: 0.25rem;">▼</span>
+      </div>
+
+      <!-- Large Search Bar -->
+      <div class="search-container" style="flex: 1; max-width: 480px;">
+        <div class="search-input-wrapper">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input type="text" id="medicineSearchInput" class="search-input" placeholder="Search medicines within 10 km (e.g. Dolo 650, Augmentin, Paracetamol)...">
+        </div>
+      </div>
+
+      <!-- Navigation Actions with 3 Role Login Buttons -->
+      <div class="nav-actions" style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+        <!-- Live Order Tracking Button -->
+        <button id="trackOrderHeaderBtn" class="btn btn-outline-primary" style="font-size: 0.78rem; padding: 0.45rem 0.7rem; font-weight: 700; border-radius: var(--radius-md);" title="Track Your Live Medicine Order">
+          📍 Track Order
+        </button>
+
+        <!-- Customer My Orders Button -->
+        <a href="my-orders.html" id="myOrdersHeaderBtn" class="btn btn-outline-primary" style="font-size: 0.78rem; padding: 0.45rem 0.7rem; font-weight: 700; border-radius: var(--radius-md);" title="View My Orders & History">
+          📦 My Orders
+        </a>
+
+        <!-- 1. Admin Login Button -->
+        <a href="admin-login.html" class="btn" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; font-size: 0.78rem; padding: 0.45rem 0.7rem; font-weight: 700; border-radius: var(--radius-md);" title="Platform Administrator Console Login">
+          🛡️ Admin Login
+        </a>
+
+        <!-- 2. Pharmacy Owner Login Button -->
+        <a href="pharmacy-login.html" class="btn" style="background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; font-size: 0.78rem; padding: 0.45rem 0.7rem; font-weight: 700; border-radius: var(--radius-md);" title="Partner Pharmacy Login & Management">
+          🏥 Pharmacy Owner Login
+        </a>
+
+        <!-- 3. Delivery Person Login Button -->
+        <a href="delivery-login.html" class="btn" style="background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; font-size: 0.78rem; padding: 0.45rem 0.7rem; font-weight: 700; border-radius: var(--radius-md);" title="Delivery Partner & Fleet Dispatch Login">
+          🚚 Delivery Person Login
+        </a>
+
+        <!-- 4. Customer Login/Register State Container -->
+        <div id="userNavContainer">
+          <a href="customer-login.html" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.45rem 0.8rem; font-weight: 700;">
+            👤 Sign In
+          </a>
+        </div>
+
+        <!-- Shopping Cart Icon -->
+        <button id="cartBtn" class="btn cart-btn" aria-label="Shopping Cart">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+          <span>Cart</span>
+          <span id="cartBadge" class="cart-badge" style="display: none;">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- DEDICATED SEARCH RESULTS: NEARBY PHARMACIES WITHIN 10 KM -->
+  <section class="products-section" id="nearbySearchSection" style="display: none; padding-top: 1.5rem; background: #f0fdf4; border-bottom: 1px solid #bbf7d0;">
+    <div style="max-width: 1320px; margin: 0 auto; padding: 0 1.5rem;">
+      <div class="section-header" style="margin-bottom: 1.25rem;">
+        <div>
+          <h3 class="section-title" style="color: #065f46;">
+            <span>🔍 Nearby Pharmacies with Stock (Within 10 km Radius)</span>
+          </h3>
+          <p style="font-size: 0.85rem; color: #047857; margin-top: 0.25rem;">
+            Showing stores holding available stock sorted by distance and estimated delivery time from <strong id="searchLocalityName">Indiranagar</strong>.
+          </p>
+        </div>
+        <button class="btn btn-outline-primary" id="closeSearchResultsBtn" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+          ✕ Clear Search
+        </button>
+      </div>
+
+      <div id="nearbySearchResultsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Promotional Banners Section -->
+  <section class="hero-promo-section">
+    <div class="promo-grid">
+      <!-- Main Banner -->
+      <div class="promo-card promo-card-main">
+        <div>
+          <span class="promo-tag tag-white">⚡ Express Health</span>
+          <h2 class="promo-title">Medicines Delivered in 15–30 Mins</h2>
+          <p class="promo-desc">Check real-time stock at your nearest licensed pharmacies with verified genuine supplies.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <a href="#products-heading" class="btn" style="background: white; color: var(--primary-dark); font-weight: 700;">Explore Catalog</a>
+          <button id="heroEmergencyBtn" class="btn badge-emergency-pulse" style="cursor: pointer; border: none; font-size: 0.85rem; padding: 0.5rem 1rem;">
+            🚨 Urgent Medicine Purchase
+          </button>
+        </div>
+      </div>
+
+      <!-- Promo 2 -->
+      <div class="promo-card promo-card-secondary">
+        <div>
+          <span class="promo-tag tag-green">Special Offer</span>
+          <h3 class="promo-title" style="font-size: 1.15rem;">Flat 25% Off First Order</h3>
+          <p class="promo-desc">Use coupon code <strong>HEALTH25</strong> at checkout on OTC health essentials.</p>
+        </div>
+        <span style="font-size: 0.78rem; font-weight: 700; color: var(--primary-dark);">Terms & Conditions Apply</span>
+      </div>
+
+      <!-- Promo 3 -->
+      <div class="promo-card promo-card-tertiary">
+        <div>
+          <span class="promo-tag" style="background: #e2e8f0; color: #334155;">For Pharmacies</span>
+          <h3 class="promo-title" style="font-size: 1.15rem;">Partner with PharmaTech</h3>
+          <p class="promo-desc">List your store inventory, boost visibility and receive online customer orders.</p>
+        </div>
+        <a href="pharmacy-login.html" style="font-size: 0.82rem; font-weight: 700; color: var(--primary); text-decoration: underline;">Join for ₹200/month →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="categories-section">
+    <div class="section-header">
+      <h3 class="section-title">
+        <span>💊 Explore Categories</span>
+      </h3>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Quick filter healthcare essentials</span>
+    </div>
+
+    <!-- Category Chips Bar -->
+    <div class="categories-bar" id="categoriesBar">
+      <button class="category-chip active" data-category="All">
+        <span class="category-chip-icon">🏥</span>
+        <span>All</span>
+      </button>
+      <button class="category-chip" data-category="Tablets">
+        <span class="category-chip-icon">💊</span>
+        <span>Tablets</span>
+      </button>
+      <button class="category-chip" data-category="Syrups">
+        <span class="category-chip-icon">🧪</span>
+        <span>Syrups</span>
+      </button>
+      <button class="category-chip" data-category="First Aid">
+        <span class="category-chip-icon">🩹</span>
+        <span>First Aid</span>
+      </button>
+      <button class="category-chip" data-category="Vitamins">
+        <span class="category-chip-icon">🍊</span>
+        <span>Vitamins</span>
+      </button>
+      <button class="category-chip" data-category="Personal Care">
+        <span class="category-chip-icon">🧴</span>
+        <span>Personal Care</span>
+      </button>
+      <button class="category-chip" data-category="Healthcare Devices">
+        <span class="category-chip-icon">🩺</span>
+        <span>Healthcare Devices</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Popular Medicines / Available Stock Section -->
+  <section class="products-section">
+    <div class="section-header">
+      <h3 class="section-title" id="products-heading">
+        <span>Popular Medicines & Healthcare Products</span>
+      </h3>
+      <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Live availability from partner pharmacies</span>
+    </div>
+
+    <!-- Product Cards Grid -->
+    <div class="products-grid" id="productsGrid">
+      <!-- Dynamic cards loaded by customer.js -->
+    </div>
+  </section>
+
+  <!-- Nearby Pharmacies Section -->
+  <section class="pharmacies-section">
+    <div class="section-header">
+      <h3 class="section-title">
+        <span>🏪 Registered Partner Pharmacies</span>
+      </h3>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Stores delivering to your selected locality</span>
+    </div>
+
+    <!-- Pharmacy Cards Grid -->
+    <div class="pharmacy-cards-grid" id="nearbyPharmaciesList">
+      <!-- Dynamic list loaded by customer.js -->
+    </div>
+  </section>
+
+  <!-- Slide-Over Shopping Cart Drawer -->
+  <div class="cart-drawer-overlay" id="cartDrawerOverlay">
+    <div class="cart-drawer">
+      <div class="cart-drawer-header">
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">Your Shopping Cart</h3>
+        <button id="closeCartBtn" style="border: none; background: transparent; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <div class="cart-items-list" id="cartItemsList">
+        <!-- Cart Items loaded dynamically -->
+      </div>
+
+      <div class="cart-drawer-footer">
+        <div style="display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.35rem;">
+          <span>Item Total</span>
+          <span id="cartSubtotal">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          <span>Govt Taxes & Fees (5%)</span>
+          <span id="cartTax">₹0.00</span>
+        </div>
+        <div class="cart-total-row">
+          <span>To Pay</span>
+          <span id="cartGrandTotal" style="color: var(--primary);">₹0.00</span>
+        </div>
+        <button id="checkoutBtn" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 700;">
+          Proceed to Order →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MANUAL LOCATION SELECTION & AUTOCOMPLETE -->
+  <div class="modal-overlay" id="locationModal">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>📍 Select Delivery Location</h3>
+        <button class="modal-close-btn" id="closeLocationModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Enter your neighborhood or address to discover pharmacies delivering within a 10 km radius.
+        </p>
+
+        <div class="form-group">
+          <input type="text" id="localitySearchInput" class="form-input" placeholder="Type locality (e.g. Indiranagar, Koramangala, HSR Layout)..." autofocus>
+        </div>
+
+        <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+          Suggested Bangalore Locations:
+        </h4>
+        <div id="locationSuggestionsList" style="border: 1px solid var(--border-light); border-radius: var(--radius-md); max-height: 240px; overflow-y: auto;">
+          <!-- Loaded via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CHECKOUT & ORDER CONFIRMATION -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal-card" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3>🛍️ Finalize Medicine Order</h3>
+        <button class="modal-close-btn" id="closeCheckoutModalBtn">&times;</button>
+      </div>
+      <form id="checkoutForm">
+        <div class="modal-body">
+          <!-- Order Summary Items -->
+          <div style="background: #f8fafc; border-radius: var(--radius-md); padding: 1rem; border: 1px solid var(--border-light); margin-bottom: 1.25rem;">
+            <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">Package Items:</h4>
+            <div id="checkoutItemsList" style="max-height: 140px; overflow-y: auto; font-size: 0.85rem;">
+              <!-- Dynamic items -->
+            </div>
+            <div style="border-top: 1px dashed var(--border-light); margin-top: 0.75rem; padding-top: 0.75rem; display: flex; justify-content: space-between; font-weight: 800;">
+              <span>Total Payable Amount:</span>
+              <span id="checkoutGrandTotal" style="color: var(--primary); font-size: 1.15rem;">₹0.00</span>
+            </div>
+          </div>
+
+          <!-- Priority Selector (Emergency vs Normal) -->
+          <div class="form-group" style="margin-bottom: 1.25rem;">
+            <label class="form-label" style="font-weight: 800;">Select Order Priority:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <label style="border: 2px solid #e2e8f0; border-radius: var(--radius-md); padding: 0.75rem; cursor: pointer; display: flex; align-items: flex-start; gap: 0.5rem;" id="labelPriorityNormal">
+                <input type="radio" name="orderPriority" value="NORMAL" checked style="margin-top: 3px;">
+                <div>
+                  <strong style="font-size: 0.88rem; color: var(--text-main); display: block;">Standard Delivery</strong>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">15–30 mins delivery</span>
+                </div>
+              </label>
+
+              <label style="border: 2px solid #ef4444; background: #fff5f5; border-radius: var(--radius-md); padding: 0.75rem; cursor: pointer; display: flex; align-items: flex-start; gap: 0.5rem;" id="labelPriorityEmergency">
+                <input type="radio" name="orderPriority" value="EMERGENCY" style="margin-top: 3px;">
+                <div>
+                  <strong style="font-size: 0.88rem; color: #b91c1c; display: block;">🚨 Emergency Order</strong>
+                  <span style="font-size: 0.75rem; color: #b91c1c;">Priority rider dispatch</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Delivery Address -->
+          <div class="form-group">
+            <label class="form-label" style="font-weight: 700;">Delivery Address / Flat & Street:</label>
+            <textarea id="checkoutAddressInput" class="form-textarea" rows="2" required placeholder="House number, apartment name, street, locality..."></textarea>
+          </div>
+
+          <!-- Payment Method -->
+          <div class="form-group">
+            <label class="form-label" style="font-weight: 700;">Payment Preference:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <label style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                <input type="radio" name="orderPayment" value="PAY_ON_DELIVERY" checked>
+                <div>
+                  <strong style="font-size: 0.85rem; display: block;">Pay on Delivery</strong>
+                  <span style="font-size: 0.72rem; color: var(--text-muted);">Cash / UPI on arrival</span>
+                </div>
+              </label>
+
+              <label style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.75rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                <input type="radio" name="orderPayment" value="ONLINE">
+                <div>
+                  <strong style="font-size: 0.85rem; display: block;">Prepaid Online</strong>
+                  <span style="font-size: 0.72rem; color: var(--text-muted);">Instant card/UPI verification</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('checkoutModal').classList.remove('open');">Cancel</button>
+          <button type="submit" id="confirmPlaceOrderBtn" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-weight: 800;">
+            Place Order & Assign Rider →
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: LIVE ORDER TRACKING WITH STEPPER -->
+  <div class="modal-overlay" id="orderTrackingModal">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.4rem;">📍</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem;">Live Order Tracking</h3>
+            <span id="trackOrderNumberDisplay" style="font-size: 0.82rem; color: #2563eb; font-weight: 800;">ORD-XXXX</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeTrackingModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 1.5rem;">
+        <!-- Search bar inside tracking modal to track any order -->
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+          <input type="text" id="trackOrderInput" class="form-input" placeholder="Enter Order Number (e.g. ORD-2026-NOV-8810)..." style="font-size: 0.85rem;">
+          <button type="button" id="btnSearchOrderTrack" class="btn btn-primary" style="font-size: 0.82rem; padding: 0.5rem 1rem;">
+            Track
+          </button>
+        </div>
+
+        <!-- Order Priority Badge & Live Pill -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <span id="trackPriorityBadge" class="badge-normal-priority">Standard Delivery</span>
+          <span class="store-status-pill" style="font-size: 0.75rem;">
+            <span class="status-dot"></span>
+            <span id="trackCurrentStatusText">Order Placed</span>
+          </span>
+        </div>
+
+        <!-- Stepper Component -->
+        <div class="stepper-container">
+          <div class="stepper-progress" id="stepperProgressBar"></div>
+          
+          <div class="step-item active" id="step1">
+            <div class="step-circle">1</div>
+            <div class="step-label">Placed</div>
+          </div>
+          <div class="step-item" id="step2">
+            <div class="step-circle">2</div>
+            <div class="step-label">Preparing</div>
+          </div>
+          <div class="step-item" id="step3">
+            <div class="step-circle">3</div>
+            <div class="step-label">Ready</div>
+          </div>
+          <div class="step-item" id="step4">
+            <div class="step-circle">4</div>
+            <div class="step-label">Rider Assigned</div>
+          </div>
+          <div class="step-item" id="step5">
+            <div class="step-circle">5</div>
+            <div class="step-label">Out for Delivery</div>
+          </div>
+          <div class="step-item" id="step6">
+            <div class="step-circle">6</div>
+            <div class="step-label">Delivered</div>
+          </div>
+        </div>
+
+        <!-- Rider & Pharmacy Details Card -->
+        <div style="background: #f8fafc; border-radius: var(--radius-md); padding: 1.25rem; border: 1px solid var(--border-light); margin-top: 1.5rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Fulfilling Pharmacy</span>
+              <h5 style="margin: 0.2rem 0; font-size: 0.95rem; font-weight: 800;" id="trackPharmacyName">Apollo Pharmacy</h5>
+              <p style="font-size: 0.8rem; color: #475569; margin: 0;" id="trackPharmacyAddress">Plot 18, 100ft Road, Indiranagar</p>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Assigned Delivery Partner</span>
+              <h5 style="margin: 0.2rem 0; font-size: 0.95rem; font-weight: 800; color: #2563eb;" id="trackRiderName">Awaiting partner assignment</h5>
+              <p style="font-size: 0.8rem; color: #475569; margin: 0;" id="trackRiderDetails">Rider details will appear after acceptance</p>
+            </div>
+          </div>
+
+          <div style="border-top: 1px dashed var(--border-light); margin-top: 0.75rem; padding-top: 0.75rem; display: flex; justify-content: space-between; font-size: 0.82rem;">
+            <span style="color: #64748b;">Delivery Address:</span>
+            <strong id="trackDestinationAddress" style="color: #0f172a; text-align: right; max-width: 65%;">Indiranagar, Bangalore</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VIEW SHOP LOCATION ONLY -->
+  <div class="modal-overlay" id="shopLocationModal">
+    <div class="modal-card" style="max-width: 680px; width: 95%;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); color: white; padding: 1.1rem 1.5rem; border-radius: var(--radius-lg) var(--radius-lg) 0 0;">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <span style="font-size: 1.5rem; background: rgba(255,255,255,0.2); padding: 0.4rem; border-radius: 8px;">🏥</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: white;" id="shopModalTitle">Store Location</h3>
+            <span id="shopModalSubtitle" style="font-size: 0.8rem; color: #a7f3d0; font-weight: 600;">Verified Partner Pharmacy Location</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeShopModalBtn" style="color: white; font-size: 1.5rem; background: transparent; border: none; cursor: pointer;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <!-- Map Container (Single Store Location Only) -->
+        <div id="shopSingleMap" style="height: 330px; width: 100%; border-radius: 12px; border: 1px solid #cbd5e1; box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); position: relative; z-index: 1;"></div>
+        
+        <!-- Shop Detail Card -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-top: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <div>
+              <h4 id="shopModalName" style="margin: 0 0 0.25rem; font-size: 1.1rem; font-weight: 800; color: #0f172a;">Pharmacy Name</h4>
+              <p id="shopModalAddress" style="margin: 0; font-size: 0.85rem; color: #475569;">Address line</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span id="shopModalDistance" style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: 0.82rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 9999px;">📍 7.1 km away</span>
+              <span id="shopModalRating" style="background: #fef3c7; border: 1px solid #fde68a; color: #92400e; font-size: 0.82rem; font-weight: 800; padding: 0.35rem 0.65rem; border-radius: 9999px;">★ 4.9</span>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; font-size: 0.82rem; color: #475569; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem;">
+            <div>⏰ <strong>Hours:</strong> <span id="shopModalHours">08:00 AM – 11:00 PM</span></div>
+            <div>📞 <strong>Phone:</strong> <span id="shopModalPhone">0422-2571234</span></div>
+            <div>💳 <strong>Merchant UPI:</strong> <code id="shopModalUpi" style="color: #047857; font-weight: 700;">merchant@upi</code></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 1rem 1.25rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 var(--radius-lg) var(--radius-lg);">
+        <span style="font-size: 0.78rem; color: #64748b;">Showing exact pharmacy location • Single pin view</span>
+        <div style="display: flex; gap: 0.75rem;">
+          <button type="button" class="btn btn-outline-primary" id="btnShopModalClose" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Close</button>
+          <a id="shopModalExternalLink" href="#" target="_blank" class="btn btn-primary" style="padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;">
+            <span>Open in Google Maps</span> ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Professional Footer -->
+  <footer class="footer-wrapper">
+    <div class="footer-container">
+      <div class="footer-col">
+        <div class="brand-logo" style="color: white; margin-bottom: 1rem;">
+          <div class="brand-icon-box" style="width: 32px; height: 32px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+            </svg>
+          </div>
+          <span style="font-size: 1.25rem;">Pharma<span style="color: var(--primary-light);">Tech</span></span>
+        </div>
+        <p style="font-size: 0.85rem; line-height: 1.6; margin-bottom: 1rem;">
+          PharmaTech is a next-generation medicine availability and pharmacy platform connecting patients with neighborhood pharmacies for fast, transparent healthcare delivery.
+        </p>
+        <span style="font-size: 0.75rem; background: #1e293b; padding: 0.3rem 0.6rem; border-radius: 4px; color: #cbd5e1;">
+          Spring Boot 3 • JPA • Java 17 Platform
+        </span>
+      </div>
+
+      <div class="footer-col">
+        <h4>Quick Categories</h4>
+        <ul class="footer-links">
+          <li><a href="#products-heading">Tablets & Capsules</a></li>
+          <li><a href="#products-heading">Cough & Cold Syrups</a></li>
+          <li><a href="#products-heading">First Aid & Antiseptics</a></li>
+          <li><a href="#products-heading">Vitamins & Supplements</a></li>
+          <li><a href="#products-heading">Healthcare Devices</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Staff Portals</h4>
+        <ul class="footer-links">
+          <li><a href="pharmacy-login.html">🏥 Pharmacy Owner Portal</a></li>
+          <li><a href="delivery-login.html">🚚 Delivery Partner Portal</a></li>
+          <li><a href="admin-login.html">🛡️ Administrator Console</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Support & Trust</h4>
+        <ul class="footer-links">
+          <li><a href="#">About PharmaTech</a></li>
+          <li><a href="#">Genuine Medicine Guarantee</a></li>
+          <li><a href="#">Privacy & Prescription Terms</a></li>
+          <li><a href="#">Contact Support</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2026 PharmaTech Platform. All rights reserved.</span>
+      <span>Designed with Spring Boot, JPA & MySQL</span>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/customer.js"></script>
+</body>
+</html>

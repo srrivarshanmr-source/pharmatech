@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmaTech – Portal Access</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'><path d='M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z'/></svg>">
+  <style>
+    body {
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .unified-auth-container {
+      max-width: 1000px;
+      margin: 2.5rem auto;
+      background: white;
+      border-radius: var(--radius-xl);
+      box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.12);
+      border: 1px solid var(--border-light);
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      overflow: hidden;
+      min-height: 560px;
+    }
+
+    @media (max-width: 840px) {
+      .unified-auth-container {
+        grid-template-columns: 1fr;
+        margin: 1rem;
+      }
+    }
+
+    /* Left Sidebar Tabs */
+    .auth-side-tabs {
+      background: linear-gradient(180deg, #064e3b 0%, #065f46 100%);
+      color: white;
+      padding: 2.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .auth-side-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 2rem;
+      text-decoration: none;
+      color: white;
+    }
+
+    .side-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.9rem 1.15rem;
+      border-radius: var(--radius-md);
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 700;
+      font-size: 0.92rem;
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .side-nav-item:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+    }
+
+    .side-nav-item.active {
+      background: white;
+      color: #064e3b;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      border-color: white;
+    }
+
+    .side-icon {
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Right Form Content */
+    .auth-form-content {
+      padding: 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: #fafcfb;
+    }
+
+    @media (max-width: 600px) {
+      .auth-form-content {
+        padding: 1.5rem;
+      }
+    }
+
+    .auth-panel {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .auth-panel.active {
+      display: block;
+    }
+
+    .panel-header-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 0.35rem;
+    }
+
+    .panel-header-sub {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1.75rem;
+    }
+
+    .password-input-group {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .password-input-group input {
+      padding-right: 2.75rem;
+    }
+
+    .password-toggle-btn {
+      position: absolute;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem;
+    }
+
+    .auth-alert-box {
+      display: none;
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Universal Header -->
+  <header class="navbar-wrapper">
+    <div class="navbar-container">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+          </svg>
+        </div>
+        <div class="brand-text">Pharma<span>Tech</span></div>
+      </a>
+
+      <div>
+        <a href="index.html" class="btn btn-outline-primary" style="font-size: 0.82rem; padding: 0.45rem 0.85rem;">
+          ← Return to Store
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Split Screen Unified Auth Container -->
+  <main style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="unified-auth-container">
+      
+      <!-- LEFT SIDE: ROLE NAVIGATION TABS -->
+      <aside class="auth-side-tabs">
+        <a href="index.html" class="auth-side-brand">
+          <div class="brand-icon-box" style="width: 32px; height: 32px; background: white; color: #064e3b;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+            </svg>
+          </div>
+          <span style="font-weight: 800; font-size: 1.25rem;">Pharma<span style="color: #6ee7b7;">Tech</span></span>
+        </a>
+
+        <p style="font-size: 0.82rem; opacity: 0.9; margin-bottom: 1.5rem; line-height: 1.5;">
+          Select your portal tab below to log in:
+        </p>
+
+        <!-- 4 REQUIRED SIDEWAY TABS -->
+        <div class="side-nav-item active" data-target="customerAuthPanel" id="tabCustomerBtn">
+          <span class="side-icon">👤</span>
+          <span>Customer Portal</span>
+        </div>
+
+        <div class="side-nav-item" data-target="pharmacyAuthPanel" id="tabPharmacyBtn">
+          <span class="side-icon">🏥</span>
+          <span>Pharmacy Owner</span>
+        </div>
+
+        <div class="side-nav-item" data-target="deliveryAuthPanel" id="tabDeliveryBtn">
+          <span class="side-icon">🚚</span>
+          <span>Delivery Partner</span>
+        </div>
+
+        <div class="side-nav-item" data-target="adminAuthPanel" id="tabAdminBtn">
+          <span class="side-icon">🛡️</span>
+          <span>Platform Admin</span>
+        </div>
+      </aside>
+
+      <!-- RIGHT SIDE: CORRESPONDING LOGIN FORMS -->
+      <section class="auth-form-content">
+        
+        <!-- ALERT MESSAGE BOX -->
+        <div id="unifiedAuthAlert" class="auth-alert-box"></div>
+
+        <!-- PANEL 1: CUSTOMER -->
+        <div id="customerAuthPanel" class="auth-panel active">
+          <h2 class="panel-header-title">Customer Sign In</h2>
+          <p class="panel-header-sub">Search medicines, explore nearby pharmacies, and track orders.</p>
+
+          <form id="uniCustForm" autocomplete="off">
+            <div class="form-group">
+              <label class="form-label" for="uniCustEmail">Email Address or Mobile Number</label>
+              <input type="text" id="uniCustEmail" class="form-input" placeholder="name@example.com or 10-digit mobile" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="uniCustPassword">Password</label>
+              <div class="password-input-group">
+                <input type="password" id="uniCustPassword" class="form-input" placeholder="Enter password" required autocomplete="current-password">
+                <button type="button" class="password-toggle-btn" data-target="uniCustPassword">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" id="uniCustBtn" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; margin-top: 1rem;">
+              Sign In to Customer Portal →
+            </button>
+          </form>
+        </div>
+
+        <!-- PANEL 2: PHARMACY OWNER -->
+        <div id="pharmacyAuthPanel" class="auth-panel">
+          <h2 class="panel-header-title">Pharmacy Owner Sign In</h2>
+          <p class="panel-header-sub">Purchase invoice stock updates, POS counter billing, and orders.</p>
+
+          <form id="uniPharmForm" autocomplete="off">
+            <div class="form-group">
+              <label class="form-label" for="uniPharmEmail">Registered Email Address</label>
+              <input type="email" id="uniPharmEmail" class="form-input" placeholder="owner@pharmacy.com" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="uniPharmPassword">Password</label>
+              <div class="password-input-group">
+                <input type="password" id="uniPharmPassword" class="form-input" placeholder="Enter password" required autocomplete="current-password">
+                <button type="button" class="password-toggle-btn" data-target="uniPharmPassword">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" id="uniPharmBtn" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; margin-top: 1rem;">
+              Sign In to Pharmacy Dashboard →
+            </button>
+          </form>
+        </div>
+
+        <!-- PANEL 3: DELIVERY PARTNER -->
+        <div id="deliveryAuthPanel" class="auth-panel">
+          <h2 class="panel-header-title">Delivery Partner Sign In</h2>
+          <p class="panel-header-sub">Manage fleet dispatch, delivery tasks, and earnings.</p>
+
+          <form id="uniDelivForm" autocomplete="off">
+            <div class="form-group">
+              <label class="form-label" for="uniDelivEmail">Email Address or Mobile Number</label>
+              <input type="text" id="uniDelivEmail" class="form-input" placeholder="rider@pharmatech.com or 10-digit mobile" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="uniDelivPassword">Password</label>
+              <div class="password-input-group">
+                <input type="password" id="uniDelivPassword" class="form-input" placeholder="Enter password" required autocomplete="current-password">
+                <button type="button" class="password-toggle-btn" data-target="uniDelivPassword">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" id="uniDelivBtn" class="btn" style="width: 100%; background: #2563eb; color: white; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; border-radius: var(--radius-md); margin-top: 1rem;">
+              Sign In to Delivery Dashboard →
+            </button>
+          </form>
+        </div>
+
+        <!-- PANEL 4: PLATFORM ADMIN -->
+        <div id="adminAuthPanel" class="auth-panel">
+          <h2 class="panel-header-title">Platform Administrator Sign In</h2>
+          <p class="panel-header-sub">Network health, pharmacy verifications, and platform KPIs.</p>
+
+          <form id="uniAdminForm" autocomplete="off">
+            <div class="form-group">
+              <label class="form-label" for="uniAdminEmail">Administrator Email Address</label>
+              <input type="email" id="uniAdminEmail" class="form-input" placeholder="admin@pharmatech.com" required autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="uniAdminPassword">Password</label>
+              <div class="password-input-group">
+                <input type="password" id="uniAdminPassword" class="form-input" placeholder="Enter administrator password" required autocomplete="current-password">
+                <button type="button" class="password-toggle-btn" data-target="uniAdminPassword">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" id="uniAdminBtn" class="btn" style="width: 100%; background: #dc2626; color: white; padding: 0.85rem; font-weight: 700; font-size: 0.95rem; border-radius: var(--radius-md); margin-top: 1rem;">
+              Sign In to Admin Console →
+            </button>
+          </form>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Tab Switching
+      const sideItems = document.querySelectorAll('.side-nav-item');
+      const panels = document.querySelectorAll('.auth-panel');
+      const alertBox = document.getElementById('unifiedAuthAlert');
+
+      function showAlert(msg, isError = true) {
+        alertBox.style.display = 'block';
+        alertBox.style.background = isError ? '#fef2f2' : '#ecfdf5';
+        alertBox.style.color = isError ? '#991b1b' : '#065f46';
+        alertBox.style.border = isError ? '1px solid #fecdd3' : '1px solid #a7f3d0';
+        alertBox.textContent = msg;
+      }
+
+      function clearAlert() {
+        alertBox.style.display = 'none';
+      }
+
+      sideItems.forEach(item => {
+        item.addEventListener('click', () => {
+          clearAlert();
+          sideItems.forEach(s => s.classList.remove('active'));
+          item.classList.add('active');
+
+          const targetId = item.getAttribute('data-target');
+          panels.forEach(p => p.classList.remove('active'));
+          const targetPanel = document.getElementById(targetId);
+          if (targetPanel) targetPanel.classList.add('active');
+        });
+      });
+
+      // Password Toggles
+      document.querySelectorAll('.password-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-target');
+          const input = document.getElementById(targetId);
+          if (!input) return;
+          if (input.type === 'password') {
+            input.type = 'text';
+            btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>`;
+          } else {
+            input.type = 'password';
+            btn.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>`;
+          }
+        });
+      });
+
+      // 1. Customer Login
+      document.getElementById('uniCustForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlert();
+        const identifier = document.getElementById('uniCustEmail').value.trim();
+        const password = document.getElementById('uniCustPassword').value;
+        const btn = document.getElementById('uniCustBtn');
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
+
+        try {
+          const res = await API.loginCustomer({ identifier, password });
+          if (res && res.data) {
+            if (res.data.role !== 'ROLE_CUSTOMER') {
+              throw new Error('Access denied. Please select your corresponding account role tab.');
+            }
+            API.saveUserSession(res.data);
+            showAlert('Sign in successful! Redirecting to store...', false);
+            setTimeout(() => { window.location.href = 'index.html'; }, 600);
+          }
+        } catch (err) {
+          showAlert(err.message || 'Invalid email or password.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Sign In to Customer Portal →';
+        }
+      });
+
+      // 2. Pharmacy Owner Login
+      document.getElementById('uniPharmForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlert();
+        const identifier = document.getElementById('uniPharmEmail').value.trim();
+        const password = document.getElementById('uniPharmPassword').value;
+        const btn = document.getElementById('uniPharmBtn');
+        btn.disabled = true;
+        btn.textContent = 'Authenticating...';
+
+        try {
+          const res = await API.loginPharmacy({ identifier, password });
+          if (res && res.data) {
+            if (res.data.role !== 'ROLE_PHARMACY_OWNER') {
+              throw new Error('Access denied. This account is not registered as a Pharmacy Owner.');
+            }
+            API.saveUserSession(res.data);
+            showAlert('Authentication successful! Opening dashboard...', false);
+            setTimeout(() => {
+              window.location.href = res.data.subscriptionActive ? 'pharmacy-dashboard.html' : 'pharmacy-subscription.html';
+            }, 600);
+          }
+        } catch (err) {
+          showAlert(err.message || 'Invalid email or password.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Sign In to Pharmacy Dashboard →';
+        }
+      });
+
+      // 3. Delivery Partner Login
+      document.getElementById('uniDelivForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlert();
+        const identifier = document.getElementById('uniDelivEmail').value.trim();
+        const password = document.getElementById('uniDelivPassword').value;
+        const btn = document.getElementById('uniDelivBtn');
+        btn.disabled = true;
+        btn.textContent = 'Authenticating...';
+
+        try {
+          const res = await API.loginDelivery({ identifier, password });
+          if (res && res.data) {
+            API.saveUserSession(res.data);
+            showAlert('Authentication successful! Opening delivery dashboard...', false);
+            setTimeout(() => { window.location.href = 'delivery-dashboard.html'; }, 600);
+          }
+        } catch (err) {
+          showAlert(err.message || 'Invalid email or password.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Sign In to Delivery Dashboard →';
+        }
+      });
+
+      // 4. Admin Login
+      document.getElementById('uniAdminForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlert();
+        const identifier = document.getElementById('uniAdminEmail').value.trim();
+        const password = document.getElementById('uniAdminPassword').value;
+        const btn = document.getElementById('uniAdminBtn');
+        btn.disabled = true;
+        btn.textContent = 'Authenticating...';
+
+        try {
+          const res = await API.loginAdmin({ identifier, password });
+          if (res && res.data) {
+            if (res.data.role !== 'ROLE_ADMIN') {
+              throw new Error('Access denied. This account does not possess administrator credentials.');
+            }
+            API.saveUserSession(res.data);
+            showAlert('Administrator authenticated! Opening console...', false);
+            setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 600);
+          }
+        } catch (err) {
+          showAlert(err.message || 'Authentication failed. Please verify credentials.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Sign In to Admin Console →';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

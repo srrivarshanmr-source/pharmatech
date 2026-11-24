@@ -1,0 +1,1333 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmaTech – Administrator Console</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ef4444'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z'/></svg>">
+  <style>
+    .admin-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .admin-kpi-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .admin-kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: #3b82f6;
+    }
+    .admin-kpi-card.green::before { background: #10b981; }
+    .admin-kpi-card.red::before { background: #ef4444; }
+    .admin-kpi-card.purple::before { background: #8b5cf6; }
+    .admin-kpi-card.amber::before { background: #f59e0b; }
+    .admin-kpi-val {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .admin-kpi-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-header">
+        <a href="index.html" class="sidebar-brand">
+          <div class="brand-icon-box" style="background: #ef4444; color: white;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
+            </svg>
+          </div>
+          <div class="brand-text">Pharma<span>Admin</span></div>
+        </a>
+      </div>
+
+      <ul class="sidebar-nav">
+        <li>
+          <a class="nav-item-link active" data-view="overview" id="navAdminOverview">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">System Overview</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="upiVerifications" id="navAdminUpiVerifications">
+            <span class="nav-icon">📲</span>
+            <span class="nav-label">UPI Verifications</span>
+            <span class="sidebar-badge" style="background: #fef3c7; color: #92400e; font-weight: 800;" id="badgePendingUpiCount">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="pharmacies" id="navAdminPharmacies">
+            <span class="nav-icon">🏥</span>
+            <span class="nav-label">Partner Pharmacies</span>
+            <span class="sidebar-badge" style="background: #ecfdf5; color: #065f46;" id="badgePharmCount">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="delivery" id="navAdminDelivery">
+            <span class="nav-icon">🚚</span>
+            <span class="nav-label">Delivery Fleet</span>
+            <span class="sidebar-badge" style="background: #eff6ff; color: #1e40af;" id="badgeFleetCount">0</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="transactions" id="navAdminTransactions">
+            <span class="nav-icon">🧾</span>
+            <span class="nav-label">Sales & Invoices</span>
+          </a>
+        </li>
+        <li>
+          <a class="nav-item-link" data-view="payments" id="navAdminPayments">
+            <span class="nav-icon">💰</span>
+            <span class="nav-label">Payments & Settlements</span>
+            <span class="sidebar-badge" style="background: #fef3c7; color: #92400e;">Demo</span>
+          </a>
+        </li>
+        <li style="margin-top: auto;">
+          <a class="nav-item-link" id="adminLogoutBtn" style="color: #ef4444;">
+            <span class="nav-icon">🚪</span>
+            <span class="nav-label">Logout</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="owner-mini-card">
+          <div class="owner-avatar" style="background: #fee2e2; color: #dc2626;">ADM</div>
+          <div class="owner-details">
+            <h5 style="font-size: 0.85rem; font-weight: 800; color: #1e293b;">Platform Administrator</h5>
+            <p style="font-size: 0.75rem; color: #64748b;">Full System Authority</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="dashboard-main">
+      
+      <!-- Topbar -->
+      <header class="dashboard-topbar">
+        <div class="topbar-left">
+          <h2>Central Administrator Console</h2>
+          <p>Master control panel for pharmacies, delivery fleet, inventory synchronization & system transactions</p>
+        </div>
+        <div class="topbar-right">
+          <!-- Universal Portal Switcher -->
+          <div style="display: flex; gap: 0.4rem; align-items: center; margin-right: 0.75rem;">
+            <a href="index.html" class="btn btn-outline-primary" style="font-size: 0.78rem; padding: 0.35rem 0.7rem;">
+              🛒 Customer Store
+            </a>
+            <a href="pharmacy-dashboard.html" class="btn btn-outline-primary" style="font-size: 0.78rem; padding: 0.35rem 0.7rem;">
+              🏥 Pharmacy Owner
+            </a>
+            <a href="delivery-dashboard.html" class="btn btn-outline-primary" style="font-size: 0.78rem; padding: 0.35rem 0.7rem; color: #2563eb; border-color: #93c5fd;">
+              🚚 Delivery Fleet
+            </a>
+            <span style="font-size: 0.78rem; background: #ef4444; color: white; padding: 0.35rem 0.75rem; border-radius: 9999px; font-weight: 700;">
+              🛡️ Admin Active
+            </span>
+          </div>
+          <button class="btn btn-primary" id="refreshStatsBtn" style="font-size: 0.85rem; padding: 0.45rem 0.95rem;">
+            🔄 Refresh Data
+          </button>
+        </div>
+      </header>
+
+      <div class="dashboard-body">
+        
+        <!-- SECTION 1: OVERVIEW -->
+        <div id="viewAdminOverview" class="admin-view-panel">
+          <div class="admin-kpi-grid">
+            <div class="admin-kpi-card green">
+              <span class="admin-kpi-label">Active Pharmacies</span>
+              <div class="admin-kpi-val" id="kpiPharmacies">0</div>
+              <span style="font-size: 0.75rem; color: #059669; font-weight: 600;">Licensed partner stores</span>
+            </div>
+
+            <div class="admin-kpi-card">
+              <span class="admin-kpi-label">Total Platform Users</span>
+              <div class="admin-kpi-val" id="kpiUsers">0</div>
+              <span style="font-size: 0.75rem; color: #2563eb; font-weight: 600;">Customers, owners & riders</span>
+            </div>
+
+            <div class="admin-kpi-card purple">
+              <span class="admin-kpi-label">Master Medicine Catalog</span>
+              <div class="admin-kpi-val" id="kpiMedicines">0</div>
+              <span style="font-size: 0.75rem; color: #7c3aed; font-weight: 600;">Registered drug SKUs</span>
+            </div>
+
+            <div class="admin-kpi-card amber">
+              <span class="admin-kpi-label">Active Delivery Fleet</span>
+              <div class="admin-kpi-val" id="kpiFleet">0</div>
+              <span style="font-size: 0.75rem; color: #d97706; font-weight: 600;">Verified dispatch riders</span>
+            </div>
+
+            <div class="admin-kpi-card green">
+              <span class="admin-kpi-label">Total Bills Generated</span>
+              <div class="admin-kpi-val" id="kpiBills">0</div>
+              <span style="font-size: 0.75rem; color: #059669; font-weight: 600;">Counter POS sales</span>
+            </div>
+
+            <div class="admin-kpi-card red">
+              <span class="admin-kpi-label">Purchase Invoices Processed</span>
+              <div class="admin-kpi-val" id="kpiInvoices">0</div>
+              <span style="font-size: 0.75rem; color: #dc2626; font-weight: 600;">Automated stock updates</span>
+            </div>
+
+            <div class="admin-kpi-card amber" style="cursor: pointer; border: 2px solid #fde68a;" onclick="document.getElementById('navAdminUpiVerifications').click();" title="Click to view pending UPI verifications">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <span class="admin-kpi-label">Pending UPI Verifications</span>
+                <span style="font-size: 0.7rem; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-weight: 700;">Action Req</span>
+              </div>
+              <div class="admin-kpi-val" id="kpiPendingUpiCount" style="color: #d97706;">0</div>
+              <span style="font-size: 0.75rem; color: #b45309; font-weight: 700;">📲 Requires manual bank check &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Quick Actions & Highlights -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="billing-pos-card">
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main);">
+                🛡️ Platform Integrity & Multi-Tenant Isolation
+              </h4>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem;">
+                Every partner pharmacy maintains an isolated stock inventory. Stock additions from purchase invoices and deductions from POS counter billing update the exact MySQL/database records accessed by the customer medicine availability engine in real-time.
+              </p>
+              <div style="background: #f8fafc; padding: 1rem; border-radius: var(--radius-md); font-size: 0.82rem; border-left: 4px solid #10b981;">
+                <strong>Live Sync Verified:</strong> Apollo Pharmacy & MedPlus inventories operate independently. Billing stock deductions are transactional and atomic.
+              </div>
+            </div>
+
+            <div class="billing-pos-card">
+              <h4 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main);">
+                ⚡ Quick Role Navigation
+              </h4>
+              <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <a href="index.html" class="btn btn-outline-primary" style="text-align: left; justify-content: flex-start; padding: 0.65rem 1rem;">
+                  🛒 <strong>Open Customer Store Homepage</strong> (Search & Cart)
+                </a>
+                <a href="pharmacy-dashboard.html" class="btn btn-outline-primary" style="text-align: left; justify-content: flex-start; padding: 0.65rem 1rem;">
+                  🏥 <strong>Open Pharmacy Partner Dashboard</strong> (Invoice & Billing)
+                </a>
+                <a href="delivery-dashboard.html" class="btn btn-outline-primary" style="text-align: left; justify-content: flex-start; padding: 0.65rem 1rem;">
+                  🚚 <strong>Open Delivery Rider Portal</strong> (Active Orders & Status)
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION: UPI PAYMENT VERIFICATIONS -->
+        <div id="viewAdminUpiVerifications" class="admin-view-panel" style="display: none;">
+          <div class="billing-pos-card" style="margin-bottom: 1.5rem;">
+            <!-- Directive Banner -->
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-left: 5px solid #f59e0b; border-radius: 8px; padding: 1.15rem 1.35rem; margin-bottom: 1.5rem;">
+              <div style="display: flex; gap: 0.85rem; align-items: flex-start;">
+                <span style="font-size: 1.6rem; line-height: 1;">⚠️</span>
+                <div>
+                  <h4 style="margin: 0 0 0.35rem 0; font-size: 1rem; font-weight: 800; color: #92400e;">
+                    Bank Statement Verification Directive (Critical Requirement)
+                  </h4>
+                  <p style="margin: 0; font-size: 0.84rem; color: #78350f; line-height: 1.55;">
+                    Verify that the payable amount and customer UTR/reference match the actual transaction received in the platform merchant account (<strong>srrivarshanmr@okaxis</strong>) before clicking <strong>Approve</strong>. <em>Do not rely solely on screenshot images.</em> Clicking Approve confirms receipt of funds, immediately transitions the order to <strong>ORDER_PLACED</strong>, and routes it to the pharmacy dashboard for fulfillment.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0 0 0.25rem 0;">UPI Payment Approvals Desk</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Orders awaiting admin bank verification before pharmacy routing.</p>
+              </div>
+              <button type="button" class="btn btn-outline-primary" id="btnRefreshUpiVerifications" style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">
+                🔄 Refresh Verifications
+              </button>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="inventory-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Order #</th>
+                    <th>Customer Details</th>
+                    <th>Pharmacy</th>
+                    <th>Amount (₹)</th>
+                    <th>UTR / Ref</th>
+                    <th>Payment Proof</th>
+                    <th>Session Status</th>
+                    <th>Verification</th>
+                    <th style="min-width: 160px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tablePendingUpiVerifications">
+                  <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading pending UPI verifications...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: PARTNER PHARMACIES -->
+        <div id="viewAdminPharmacies" class="admin-view-panel" style="display: none;">
+          <div class="billing-pos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Registered Partner Pharmacies</h3>
+              <input type="text" id="pharmacySearchInput" class="form-input" placeholder="Search pharmacies by name or city..." style="max-width: 280px; font-size: 0.85rem;">
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Pharmacy Name</th>
+                    <th>Drug License</th>
+                    <th>City & Address</th>
+                    <th>Contact Phone</th>
+                    <th>Owner Account</th>
+                    <th>Rating</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="adminPharmaciesTableBody">
+                  <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading pharmacies...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: DELIVERY FLEET -->
+        <div id="viewAdminDelivery" class="admin-view-panel" style="display: none;">
+          <div class="billing-pos-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+              <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Active Delivery Fleet</h3>
+              <span class="sidebar-badge" style="background: #eff6ff; color: #1e40af; font-size: 0.85rem; padding: 0.35rem 0.85rem;">Fleet Verified</span>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Rider Name</th>
+                    <th>Vehicle Number</th>
+                    <th>Driving License</th>
+                    <th>Operating City</th>
+                    <th>Completed Deliveries</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="adminFleetTableBody">
+                  <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Loading delivery fleet...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 4: TRANSACTIONS & SALES -->
+        <div id="viewAdminTransactions" class="admin-view-panel" style="display: none;">
+          <div class="billing-pos-card">
+            <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main);">Platform Transactions & Audit Log</h3>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.25rem;">Live feed of in-store counter billing receipts and confirmed purchase invoice imports.</p>
+
+            <div style="overflow-x: auto;">
+              <table class="inventory-table">
+                <thead>
+                  <tr>
+                    <th>Record ID</th>
+                    <th>Type</th>
+                    <th>Entity</th>
+                    <th>Customer / Supplier</th>
+                    <th>Amount (₹)</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="adminTransactionsTableBody">
+                  <tr>
+                    <td><strong>BILL-2026-1001</strong></td>
+                    <td><span class="sidebar-badge" style="background: #ecfdf5; color: #065f46;">Counter POS</span></td>
+                    <td>Apollo Pharmacy - Metro</td>
+                    <td>Walk-in Customer (Amit Roy)</td>
+                    <td>₹320.25</td>
+                    <td><span class="sidebar-badge" style="background: #dcfce7; color: #166534;">PAID / DEDUCTED</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>INV-2026-NOV-8891</strong></td>
+                    <td><span class="sidebar-badge" style="background: #eff6ff; color: #1e40af;">Purchase Invoice</span></td>
+                    <td>Apollo Pharmacy - Metro</td>
+                    <td>SunPharma Healthcare Hub</td>
+                    <td>₹4,520.00</td>
+                    <td><span class="sidebar-badge" style="background: #dbeafe; color: #1e40af;">CONFIRMED / ADDED</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Payments & Settlements View -->
+        <div id="viewAdminPayments" style="display: none;">
+          
+          <!-- Configuration Card -->
+          <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="font-size: 1.4rem;">⚙️</span>
+                <div>
+                  <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-main);">Platform Payment & Commission Settings</h4>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">Admin collection wallet & dynamic pharmacy commission split rule</span>
+                </div>
+              </div>
+              <span style="background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: 9999px; border: 1px solid #fde68a;">
+                TEST / DEMO ENVIRONMENT
+              </span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+              <!-- Admin UPI ID Setting -->
+              <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.15rem;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: #475569; text-transform: uppercase; display: block; margin-bottom: 0.35rem;">
+                  Admin Collection UPI ID (Display / Demo)
+                </label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="cfgAdminUpiId" class="form-input" style="flex: 1; font-weight: 700; font-family: monospace;" value="srrivarshanmr@okaxis">
+                  <button type="button" id="btnSaveAdminUpi" class="btn btn-primary" style="font-size: 0.82rem; padding: 0.45rem 0.9rem;">
+                    Update UPI
+                  </button>
+                </div>
+                <span style="font-size: 0.72rem; color: #64748b; display: block; margin-top: 0.35rem;">
+                  Used for platform display and customer prepaid demo checkout routing.
+                </span>
+              </div>
+
+              <!-- Admin Commission Percentage Setting -->
+              <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.15rem;">
+                <label style="font-size: 0.8rem; font-weight: 700; color: #475569; text-transform: uppercase; display: block; margin-bottom: 0.35rem;">
+                  Admin Commission Percentage (%)
+                </label>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="number" id="cfgCommissionRate" class="form-input" style="width: 130px; font-weight: 800; font-size: 1.05rem;" value="5.0" step="0.5" min="0" max="100">
+                  <span style="font-weight: 800; font-size: 1.1rem; color: var(--text-main);">%</span>
+                  <button type="button" id="btnSaveCommission" class="btn btn-primary" style="font-size: 0.82rem; padding: 0.45rem 0.9rem;">
+                    Save Commission
+                  </button>
+                </div>
+                <span style="font-size: 0.72rem; color: #64748b; display: block; margin-top: 0.35rem;">
+                  Settlement formula: <em>Pharmacy Payout = Customer Payment - (Amount × Commission %)</em>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7 Summary KPI Cards -->
+          <div class="admin-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+            <div class="admin-kpi-card green">
+              <span class="admin-kpi-label">Total Customer Payments</span>
+              <div class="admin-kpi-val" id="kpiTotalCustomerPayments" style="color: #059669;">₹0.00</div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">All customer orders gross</span>
+            </div>
+            <div class="admin-kpi-card amber">
+              <span class="admin-kpi-label">Total Platform Revenue</span>
+              <div class="admin-kpi-val" id="kpiTotalPlatformRevenue" style="color: #d97706;">₹0.00</div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);"><span id="lblCurrentCommBadge">5.0%</span> platform fee</span>
+            </div>
+            <div class="admin-kpi-card purple">
+              <span class="admin-kpi-label">Total Pharmacy Earnings</span>
+              <div class="admin-kpi-val" id="kpiTotalPharmacyEarnings" style="color: #7c3aed;">₹0.00</div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Net pharmacy partner share</span>
+            </div>
+            <div class="admin-kpi-card blue">
+              <span class="admin-kpi-label">Pending Transfers</span>
+              <div class="admin-kpi-val" id="kpiPendingTransfers" style="color: #2563eb;">₹0.00</div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Awaiting settlement</span>
+            </div>
+            <div class="admin-kpi-card green">
+              <span class="admin-kpi-label">Completed Transfers</span>
+              <div class="admin-kpi-val" id="kpiCompletedTransfers" style="color: #059669;">₹0.00</div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Settled disbursements</span>
+            </div>
+            <div class="admin-kpi-card red">
+              <span class="admin-kpi-label">Failed Settlements</span>
+              <div class="admin-kpi-val" id="kpiFailedSettlements" style="color: #dc2626;">0</div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);"><span id="kpiFailedAmt">₹0.00</span> failed</span>
+            </div>
+            <div class="admin-kpi-card gray">
+              <span class="admin-kpi-label">Refunds & Reversals</span>
+              <div class="admin-kpi-val" id="kpiRefunds" style="color: #475569;">0</div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);"><span id="kpiRefundAmt">₹0.00</span> reversed</span>
+            </div>
+            <div class="admin-kpi-card orange">
+              <span class="admin-kpi-label">Outstanding Cash Remittance</span>
+              <div class="admin-kpi-val" id="kpiOutstandingRemittance" style="color: #ea580c;">₹0.00</div>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Cash held by riders</span>
+            </div>
+          </div>
+
+          <!-- Filter Bar -->
+          <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); padding: 1.15rem 1.5rem; margin-bottom: 1.25rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; flex: 1;">
+              <input type="text" id="filterPaymentSearch" class="form-input" placeholder="🔍 Search Order #, Txn Ref, Customer..." style="max-width: 260px; font-size: 0.85rem;">
+              
+              <select id="filterPaymentStatus" class="form-input" style="max-width: 180px; font-size: 0.85rem;">
+                <option value="ALL">All Statuses</option>
+                <option value="TEST_SUCCESS">TEST_SUCCESS (Prepaid)</option>
+                <option value="COD_COLLECTED">COD_COLLECTED (Cash)</option>
+                <option value="COD_PENDING">COD_PENDING (Uncollected)</option>
+                <option value="TEST_FAILED">TEST_FAILED (Failed)</option>
+                <option value="TEST_CANCELLED">TEST_CANCELLED (Cancelled)</option>
+                <option value="REVERSED">REVERSED (Reversed)</option>
+              </select>
+
+              <select id="filterPaymentPharmacy" class="form-input" style="max-width: 220px; font-size: 0.85rem;">
+                <option value="">All Pharmacies</option>
+              </select>
+
+              <input type="date" id="filterPaymentDate" class="form-input" style="max-width: 160px; font-size: 0.85rem;">
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" id="btnApplyPaymentFilters" class="btn btn-primary" style="font-size: 0.82rem; padding: 0.45rem 0.9rem;">
+                Filter
+              </button>
+              <button type="button" id="btnResetPaymentFilters" class="btn btn-outline-primary" style="font-size: 0.82rem; padding: 0.45rem 0.8rem;">
+                Reset
+              </button>
+            </div>
+          </div>
+
+          <!-- Ledger Table -->
+          <div style="background: white; border-radius: var(--radius-lg); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); overflow: hidden;">
+            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">Payment Transactions & Settlement Ledger</h3>
+                <span style="font-size: 0.78rem; color: var(--text-muted);" id="lblPaymentsCountText">Showing records</span>
+              </div>
+              <button type="button" id="btnAutoSettleAll" class="btn btn-primary" style="background: #059669; font-size: 0.82rem; padding: 0.45rem 1rem; font-weight: 700;">
+                ⚡ Auto-Transfer / Settle to Pharmacy Owners
+              </button>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="inventory-table" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Txn Reference</th>
+                    <th>Order #</th>
+                    <th>Customer</th>
+                    <th>Pharmacy</th>
+                    <th>Method</th>
+                    <th>Gross (₹)</th>
+                    <th>Comm. (%)</th>
+                    <th>Comm. Amt</th>
+                    <th>Net Settlement</th>
+                    <th>Payment Status</th>
+                    <th>Settlement</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="adminPaymentsTableBody">
+                  <tr>
+                    <td colspan="12" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading payments...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Transaction Inspection Modal -->
+        <div id="paymentInspectionModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+          <div style="background: white; border-radius: 16px; max-width: 620px; width: 100%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #e2e8f0;">
+            <div style="background: #1e293b; color: white; padding: 1.15rem 1.4rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0; font-size: 1.1rem; font-weight: 800; color: white;">Transaction & Settlement Audit</h4>
+                <span style="font-size: 0.75rem; color: #94a3b8;">Full ledger entry and commission verification breakdown</span>
+              </div>
+              <button type="button" id="btnCloseInspectionModal" style="background: rgba(255,255,255,0.15); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+            <div id="inspectionModalContent" style="padding: 1.5rem;">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin UPI Screenshot Lightbox Modal -->
+        <div id="adminScreenshotModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); z-index: 10000; align-items: center; justify-content: center; padding: 1.5rem;">
+          <div style="background: white; border-radius: 16px; max-width: 680px; width: 100%; max-height: 92vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);">
+            <div style="background: #1e293b; color: white; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 id="adminModalTitle" style="margin: 0; font-size: 1rem; font-weight: 800; color: white;">Payment Screenshot Proof</h4>
+                <span id="adminModalSubtitle" style="font-size: 0.75rem; color: #94a3b8;">Customer transfer confirmation image</span>
+              </div>
+              <button type="button" id="btnCloseAdminScreenshotModal" style="background: rgba(255,255,255,0.15); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+            <div style="padding: 1.25rem; overflow-y: auto; text-align: center; background: #0f172a; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 280px;">
+              <img id="adminScreenshotImg" src="" alt="Payment Proof" style="max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">
+            </div>
+            <div style="padding: 0.85rem 1.25rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <span id="adminModalFileName" style="font-size: 0.78rem; color: #475569; font-family: monospace; font-weight: 700;"></span>
+                <span id="adminModalUtr" style="display: block; font-size: 0.74rem; color: #64748b;"></span>
+              </div>
+              <button type="button" class="btn btn-outline-primary" id="btnDismissAdminScreenshot" style="font-size: 0.8rem; padding: 0.35rem 0.85rem;">Close Preview</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Route Protection Guard
+    (function checkAdminAuth() {
+      const user = API.getUserSession();
+      if (!user || user.role !== 'ROLE_ADMIN') {
+        window.location.replace('admin-login.html');
+      }
+    })();
+
+    // Tab Navigation
+    const navItems = document.querySelectorAll('.nav-item-link[data-view]');
+    const views = {
+      overview: document.getElementById('viewAdminOverview'),
+      upiVerifications: document.getElementById('viewAdminUpiVerifications'),
+      pharmacies: document.getElementById('viewAdminPharmacies'),
+      delivery: document.getElementById('viewAdminDelivery'),
+      transactions: document.getElementById('viewAdminTransactions'),
+      payments: document.getElementById('viewAdminPayments')
+    };
+
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        navItems.forEach(n => n.classList.remove('active'));
+        item.classList.add('active');
+        const target = item.getAttribute('data-view');
+        Object.keys(views).forEach(v => {
+          if (views[v]) views[v].style.display = (v === target) ? 'block' : 'none';
+        });
+        if (target === 'payments') {
+          loadAdminPayments();
+          loadAdminCommissionSettings();
+        } else if (target === 'upiVerifications') {
+          loadPendingUpiVerifications();
+        }
+      });
+    });
+
+    // Logout
+    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+      API.clearSession();
+      window.location.href = 'admin-login.html';
+    });
+
+    // Load Admin Data
+    async function loadAdminData() {
+      try {
+        // Stats
+        const statsRes = await fetch('/api/admin/stats');
+        const statsData = await statsRes.json();
+        if (statsData.success && statsData.data) {
+          const s = statsData.data;
+          document.getElementById('kpiPharmacies').textContent = s.totalPharmacies || 0;
+          document.getElementById('kpiUsers').textContent = s.totalUsers || 0;
+          document.getElementById('kpiMedicines').textContent = s.totalMedicines || 0;
+          document.getElementById('kpiFleet').textContent = s.totalDeliveryPartners || 0;
+          document.getElementById('kpiBills').textContent = s.totalBillsGenerated || 0;
+          document.getElementById('kpiInvoices').textContent = s.totalInvoicesProcessed || 0;
+          document.getElementById('badgePharmCount').textContent = s.totalPharmacies || 0;
+          document.getElementById('badgeFleetCount').textContent = s.totalDeliveryPartners || 0;
+
+          // Pending UPI Verifications count
+          const upiCount = s.pendingUpiVerifications || 0;
+          const elBadgeUpi = document.getElementById('badgePendingUpiCount');
+          const elKpiUpi = document.getElementById('kpiPendingUpiCount');
+          if (elBadgeUpi) elBadgeUpi.textContent = upiCount;
+          if (elKpiUpi) elKpiUpi.textContent = upiCount;
+        }
+
+        // Pharmacies
+        const pharmRes = await fetch('/api/admin/pharmacies');
+        const pharmData = await pharmRes.json();
+        if (pharmData.success && pharmData.data) {
+          renderPharmacies(pharmData.data);
+        }
+
+        // Delivery Fleet
+        const fleetRes = await fetch('/api/admin/delivery-fleet');
+        const fleetData = await fleetRes.json();
+        if (fleetData.success && fleetData.data) {
+          renderFleet(fleetData.data);
+        }
+      } catch (err) {
+        console.error('Failed to load admin stats:', err);
+      }
+    }
+
+    function renderPharmacies(pharmacies) {
+      const tbody = document.getElementById('adminPharmaciesTableBody');
+      if (!pharmacies || pharmacies.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No registered pharmacies found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = pharmacies.map(p => `
+        <tr>
+          <td><strong>${p.name}</strong></td>
+          <td><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${p.licenseNumber}</code></td>
+          <td>${p.city} • <span style="font-size: 0.8rem; color: var(--text-muted);">${p.address}</span></td>
+          <td>${p.phoneNumber || 'N/A'}</td>
+          <td>${p.ownerName ? p.ownerName + ' (' + p.ownerEmail + ')' : 'Assigned'}</td>
+          <td>⭐ ${p.rating || 4.8}</td>
+          <td>
+            <span class="sidebar-badge" style="background: #dcfce7; color: #166534;">Verified Partner</span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderFleet(fleet) {
+      const tbody = document.getElementById('adminFleetTableBody');
+      if (!fleet || fleet.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No delivery riders found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = fleet.map(r => `
+        <tr>
+          <td><strong>${r.fullName}</strong><br><span style="font-size: 0.78rem; color: var(--text-muted);">${r.email}</span></td>
+          <td><strong style="color: #2563eb;">${r.vehicleNumber}</strong></td>
+          <td><code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">${r.drivingLicenseNumber}</code></td>
+          <td>${r.city || 'Bangalore'}</td>
+          <td>${r.totalDeliveries || 0} Trips</td>
+          <td>
+            <span class="sidebar-badge" style="background: ${r.available ? '#dcfce7' : '#fef3c7'}; color: ${r.available ? '#166534' : '#92400e'};">
+              ${r.available ? '🟢 Available' : '🟡 On Delivery'}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    document.getElementById('refreshStatsBtn').addEventListener('click', () => {
+      loadAdminData();
+      const activeTab = document.querySelector('.nav-item-link.active');
+      if (activeTab && activeTab.getAttribute('data-view') === 'payments') {
+        loadAdminPayments();
+        loadAdminCommissionSettings();
+      } else if (activeTab && activeTab.getAttribute('data-view') === 'upiVerifications') {
+        loadPendingUpiVerifications();
+      }
+    });
+
+    // ============================================================
+    // 4.5. UPI PAYMENT VERIFICATIONS MODULE
+    // ============================================================
+    let cachedPendingVerifications = [];
+
+    async function loadPendingUpiVerifications() {
+      const tbody = document.getElementById('tablePendingUpiVerifications');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading pending UPI verifications...</td></tr>';
+      }
+
+      try {
+        const res = await API.getPendingUpiVerifications();
+        cachedPendingVerifications = (res && res.data) ? res.data : [];
+        const count = cachedPendingVerifications.length;
+        const elBadge = document.getElementById('badgePendingUpiCount');
+        const elKpi = document.getElementById('kpiPendingUpiCount');
+        if (elBadge) elBadge.textContent = count;
+        if (elKpi) elKpi.textContent = count;
+
+        renderPendingUpiVerifications(cachedPendingVerifications);
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 2rem;">Failed to load verifications: ${escapeHtml(err.message)}</td></tr>`;
+        }
+      }
+    }
+
+    function renderPendingUpiVerifications(list) {
+      const tbody = document.getElementById('tablePendingUpiVerifications');
+      if (!tbody) return;
+
+      if (!list || list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 3rem 1.5rem;">
+              <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🎉</div>
+              <strong style="color: var(--text-main); font-size: 1.05rem;">All UPI Payments Verified</strong>
+              <p style="margin: 0.35rem 0 0 0; font-size: 0.85rem;">There are currently no orders pending bank statement check or screenshot review.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => {
+        // Session Status
+        let sessionStatusBadge = '';
+        if (item.isExpired) {
+          sessionStatusBadge = '<span class="sidebar-badge" style="background: #fee2e2; color: #991b1b; font-size: 0.75rem; font-weight: 700;">⏰ Timer Expired</span>';
+        } else {
+          const m = Math.floor(item.remainingSeconds / 60);
+          const s = item.remainingSeconds % 60;
+          sessionStatusBadge = `<span class="sidebar-badge" style="background: #ecfdf5; color: #065f46; font-size: 0.75rem; font-weight: 700;">⏳ ${m}m ${s < 10 ? '0' : ''}${s}s</span>`;
+        }
+
+        // Approval Status badge
+        let approvalBadge = '';
+        if (item.approvalStatus === 'PENDING_VERIFICATION') {
+          approvalBadge = '<span class="sidebar-badge" style="background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 800;">🟡 Proof Uploaded</span>';
+        } else if (item.approvalStatus === 'PENDING_PROOF') {
+          approvalBadge = '<span class="sidebar-badge" style="background: #eff6ff; color: #1e40af; font-size: 0.75rem; font-weight: 700;">🔵 Awaiting Proof</span>';
+        } else {
+          approvalBadge = `<span class="sidebar-badge" style="background: #f1f5f9; color: #475569; font-size: 0.75rem;">${escapeHtml(item.approvalStatus)}</span>`;
+        }
+
+        // Proof preview button
+        let proofCol = '';
+        if (item.hasScreenshot && item.screenshotData) {
+          proofCol = `
+            <button type="button" class="btn btn-outline-primary btn-inspect-screenshot" data-orderid="${item.orderId}" style="font-size: 0.75rem; padding: 0.3rem 0.65rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+              🖼️ View Proof
+            </button>
+          `;
+        } else {
+          proofCol = '<span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">No image yet</span>';
+        }
+
+        return `
+          <tr>
+            <td>
+              <strong style="color: #2563eb;">${escapeHtml(item.orderNumber || 'ORD-' + item.orderId)}</strong>
+              <span style="display: block; font-size: 0.72rem; color: var(--text-muted);">${item.createdAt ? new Date(item.createdAt).toLocaleTimeString() : ''}</span>
+            </td>
+            <td>
+              <strong>${escapeHtml(item.customerName || 'Customer')}</strong>
+              <span style="display: block; font-size: 0.75rem; color: #64748b;">${escapeHtml(item.customerPhone || item.customerEmail || 'N/A')}</span>
+            </td>
+            <td>
+              <span style="font-weight: 600;">${escapeHtml(item.pharmacyName || 'Pharmacy #' + item.pharmacyId)}</span>
+            </td>
+            <td>
+              <strong style="color: #059669; font-size: 1rem;">₹${Number(item.amount || 0).toFixed(2)}</strong>
+            </td>
+            <td>
+              <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.8rem; color: #0f172a;">
+                ${escapeHtml(item.utrNumber || 'N/A')}
+              </code>
+            </td>
+            <td>${proofCol}</td>
+            <td>${sessionStatusBadge}</td>
+            <td>${approvalBadge}</td>
+            <td>
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <button type="button" class="btn btn-approve-upi" 
+                  data-orderid="${item.orderId}" 
+                  data-ordernum="${escapeHtml(item.orderNumber || 'ORD-' + item.orderId)}" 
+                  data-amount="${item.amount}" 
+                  data-pharmacy="${escapeHtml(item.pharmacyName || '')}" 
+                  style="background: #10b981; color: white; border: none; font-size: 0.75rem; padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;">
+                  ✓ Approve
+                </button>
+                <button type="button" class="btn btn-reject-upi" 
+                  data-orderid="${item.orderId}" 
+                  data-ordernum="${escapeHtml(item.orderNumber || 'ORD-' + item.orderId)}" 
+                  style="background: #ef4444; color: white; border: none; font-size: 0.75rem; padding: 0.35rem 0.7rem; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;">
+                  ✕ Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Wire up view screenshot buttons
+      tbody.querySelectorAll('.btn-inspect-screenshot').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const orderId = Number(btn.getAttribute('data-orderid'));
+          const item = cachedPendingVerifications.find(x => x.orderId === orderId);
+          if (item && item.screenshotData) {
+            openAdminScreenshotModal(item);
+          }
+        });
+      });
+
+      // Wire up approve buttons
+      tbody.querySelectorAll('.btn-approve-upi').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const orderId = Number(btn.getAttribute('data-orderid'));
+          const orderNum = btn.getAttribute('data-ordernum');
+          const amount = Number(btn.getAttribute('data-amount') || 0);
+          const pharmacy = btn.getAttribute('data-pharmacy');
+
+          const ok = confirm(`CRITICAL VERIFICATION CHECK:\n\nHave you verified against the bank statement that ₹${amount.toFixed(2)} has been credited to srrivarshanmr@okaxis for Order ${orderNum}?\n\nClicking OK will:\n1. Confirm payment and mark order as PAID.\n2. Place order and route it to ${pharmacy} for preparation.\n3. Execute the 95% pharmacy / 5% platform commission settlement.`);
+          if (!ok) return;
+
+          btn.disabled = true;
+          btn.textContent = 'Approving...';
+          try {
+            const res = await API.approveUpiPayment(orderId);
+            alert(`✓ Order ${orderNum} Approved!\n\nPayment has been verified. The order is now active and has been dispatched to ${pharmacy}.`);
+            await loadPendingUpiVerifications();
+            await loadAdminData();
+          } catch (err) {
+            alert('Approval failed: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = '✓ Approve';
+          }
+        });
+      });
+
+      // Wire up reject buttons
+      tbody.querySelectorAll('.btn-reject-upi').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const orderId = Number(btn.getAttribute('data-orderid'));
+          const orderNum = btn.getAttribute('data-ordernum');
+
+          const reason = prompt(`Enter rejection reason for Order ${orderNum}.\n\n(This note will be displayed to the customer on their screen so they can retry payment):`, 'Amount not received in merchant bank account');
+          if (reason === null) return; // cancelled
+
+          btn.disabled = true;
+          btn.textContent = 'Rejecting...';
+          try {
+            await API.rejectUpiPayment(orderId, reason);
+            alert(`Order ${orderNum} rejected. The customer has been notified and can retry their payment.`);
+            await loadPendingUpiVerifications();
+            await loadAdminData();
+          } catch (err) {
+            alert('Rejection failed: ' + err.message);
+            btn.disabled = false;
+            btn.textContent = '✕ Reject';
+          }
+        });
+      });
+    }
+
+    function openAdminScreenshotModal(item) {
+      const modal = document.getElementById('adminScreenshotModal');
+      const img = document.getElementById('adminScreenshotImg');
+      const title = document.getElementById('adminModalTitle');
+      const subtitle = document.getElementById('adminModalSubtitle');
+      const fileName = document.getElementById('adminModalFileName');
+      const utrEl = document.getElementById('adminModalUtr');
+
+      if (!modal || !img) return;
+
+      img.src = item.screenshotData;
+      title.textContent = `Payment Proof — ${item.orderNumber || 'Order #' + item.orderId}`;
+      subtitle.textContent = `Uploaded by ${item.customerName || 'Customer'} • ₹${Number(item.amount || 0).toFixed(2)}`;
+      fileName.textContent = item.fileName ? `File: ${item.fileName}` : 'Uploaded Proof';
+      utrEl.textContent = item.utrNumber ? `Customer Reported UTR: ${item.utrNumber}` : 'No UTR specified';
+
+      modal.style.display = 'flex';
+    }
+
+    const btnCloseScreenshot = document.getElementById('btnCloseAdminScreenshotModal');
+    if (btnCloseScreenshot) {
+      btnCloseScreenshot.addEventListener('click', () => {
+        document.getElementById('adminScreenshotModal').style.display = 'none';
+      });
+    }
+    const btnDismissScreenshot = document.getElementById('btnDismissAdminScreenshot');
+    if (btnDismissScreenshot) {
+      btnDismissScreenshot.addEventListener('click', () => {
+        document.getElementById('adminScreenshotModal').style.display = 'none';
+      });
+    }
+    const btnRefreshUpi = document.getElementById('btnRefreshUpiVerifications');
+    if (btnRefreshUpi) {
+      btnRefreshUpi.addEventListener('click', () => loadPendingUpiVerifications());
+    }
+
+    // ============================================================
+    // 5. ADMIN PAYMENTS & SETTLEMENTS LEDGER MODULE
+    // ============================================================
+    let cachedAdminPayments = [];
+
+    async function loadAdminCommissionSettings() {
+      try {
+        const res = await API.getAdminCommissionSetting();
+        if (res && res.data) {
+          const cfg = res.data;
+          const upiInput = document.getElementById('cfgAdminUpiId');
+          const commInput = document.getElementById('cfgCommissionRate');
+          const badge = document.getElementById('lblCurrentCommBadge');
+          if (upiInput && cfg.adminUpiId) upiInput.value = cfg.adminUpiId;
+          if (commInput && cfg.commissionPercentage !== undefined) commInput.value = cfg.commissionPercentage;
+          if (badge && cfg.commissionPercentage !== undefined) badge.textContent = `${cfg.commissionPercentage}%`;
+        }
+      } catch (e) {
+        console.warn('Failed to load admin settings:', e);
+      }
+    }
+
+    async function loadAdminPayments() {
+      const tbody = document.getElementById('adminPaymentsTableBody');
+      const countLabel = document.getElementById('lblPaymentsCountText');
+      if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading payment ledger records...</td></tr>';
+      }
+
+      // 1. Load KPI Summary (7 Cards)
+      try {
+        const summaryRes = await API.getAdminPaymentSummary();
+        if (summaryRes && summaryRes.data) {
+          const s = summaryRes.data;
+          const gross = s.totalCustomerPayments != null ? s.totalCustomerPayments : (s.totalDemoRevenue || 0);
+          const rev = s.totalPlatformRevenue != null ? s.totalPlatformRevenue : (s.totalAdminCommission || 0);
+          const pharm = s.totalPharmacyEarnings != null ? s.totalPharmacyEarnings : (s.totalPharmacySettlements || 0);
+          const pending = s.pendingTransfers != null ? s.pendingTransfers : 0;
+          const completed = s.completedTransfers != null ? s.completedTransfers : (s.totalPharmacySettlements || 0);
+          const failedCount = s.failedSettlementsCount != null ? s.failedSettlementsCount : 0;
+          const failedAmt = s.failedSettlementsAmount != null ? s.failedSettlementsAmount : 0;
+          const refundCount = s.refundsCount != null ? s.refundsCount : 0;
+          const refundAmt = s.refundsAmount != null ? s.refundsAmount : 0;
+
+          const elCust = document.getElementById('kpiTotalCustomerPayments');
+          const elRev = document.getElementById('kpiTotalPlatformRevenue');
+          const elPharm = document.getElementById('kpiTotalPharmacyEarnings');
+          const elPending = document.getElementById('kpiPendingTransfers');
+          const elCompleted = document.getElementById('kpiCompletedTransfers');
+          const elFailed = document.getElementById('kpiFailedSettlements');
+          const elFailedAmt = document.getElementById('kpiFailedAmt');
+          const elRefunds = document.getElementById('kpiRefunds');
+          const elRefundAmt = document.getElementById('kpiRefundAmt');
+          const elRemittance = document.getElementById('kpiOutstandingRemittance');
+
+          if (elCust) elCust.textContent = `₹${Number(gross).toFixed(2)}`;
+          if (elRev) elRev.textContent = `₹${Number(rev).toFixed(2)}`;
+          if (elPharm) elPharm.textContent = `₹${Number(pharm).toFixed(2)}`;
+          if (elPending) elPending.textContent = `₹${Number(pending).toFixed(2)}`;
+          if (elCompleted) elCompleted.textContent = `₹${Number(completed).toFixed(2)}`;
+          if (elFailed) elFailed.textContent = failedCount;
+          if (elFailedAmt) elFailedAmt.textContent = `₹${Number(failedAmt).toFixed(2)}`;
+          if (elRefunds) elRefunds.textContent = refundCount;
+          if (elRefundAmt) elRefundAmt.textContent = `₹${Number(refundAmt).toFixed(2)}`;
+          if (elRemittance) elRemittance.textContent = `₹${Number(s.outstandingCashRemittance || 0).toFixed(2)}`;
+
+          if (s.commissionPercentage !== undefined) {
+            const badge = document.getElementById('lblCurrentCommBadge');
+            if (badge) badge.textContent = `${s.commissionPercentage}%`;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load payment summary:', err);
+      }
+
+      // 2. Load Filtered Payments
+      try {
+        const statusVal = document.getElementById('filterPaymentStatus').value;
+        const pharmacyVal = document.getElementById('filterPaymentPharmacy').value;
+        const dateVal = document.getElementById('filterPaymentDate').value;
+        const searchVal = document.getElementById('filterPaymentSearch').value.trim();
+
+        const params = {};
+        if (statusVal && statusVal !== 'ALL') params.status = statusVal;
+        if (pharmacyVal) params.pharmacyId = pharmacyVal;
+        if (dateVal) params.date = dateVal;
+        if (searchVal) params.search = searchVal;
+
+        const res = await API.getAdminPayments(params);
+        cachedAdminPayments = (res && res.data) ? res.data : [];
+
+        if (countLabel) countLabel.textContent = `Showing ${cachedAdminPayments.length} records`;
+
+        renderAdminPaymentsTable(cachedAdminPayments);
+
+        // Populate pharmacy filter options if empty
+        populatePharmacyFilterOptions();
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; color: #ef4444; padding: 2rem;">Failed to load payments: ${escapeHtml(err.message)}</td></tr>`;
+        }
+      }
+    }
+
+    function renderAdminPaymentsTable(payments) {
+      const tbody = document.getElementById('adminPaymentsTableBody');
+      if (!tbody) return;
+
+      if (!payments || payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No payment transactions match the selected criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = payments.map(p => {
+        const isSuccess = (p.paymentStatus === 'PAID' || p.paymentStatus === 'TEST_SUCCESS' || p.paymentStatus === 'COD_COLLECTED');
+        const isSettled = (p.settlementStatus === 'SETTLED' || p.settlementStatus === 'DEMO_SETTLED' || p.settlementStatus === 'PROCESSED');
+        const isReversed = (p.settlementStatus === 'REVERSED');
+        const isFailed = (p.paymentStatus === 'TEST_FAILED');
+        const isCancelled = (p.paymentStatus === 'TEST_CANCELLED');
+        const isCodPending = (p.paymentStatus === 'COD_PENDING');
+
+        let statusBadgeBg = '#fef3c7';
+        let statusBadgeColor = '#92400e';
+        if (isSuccess) {
+          statusBadgeBg = '#dcfce7';
+          statusBadgeColor = '#166534';
+        } else if (isFailed || isCancelled || isReversed) {
+          statusBadgeBg = '#fee2e2';
+          statusBadgeColor = '#991b1b';
+        }
+
+        return `
+          <tr>
+            <td>
+              <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">
+                ${escapeHtml(p.transactionReference || 'N/A')}
+              </code>
+            </td>
+            <td><strong>${escapeHtml(p.orderNumber || 'ORD-' + p.orderId)}</strong></td>
+            <td>
+              <span style="font-weight: 600;">${escapeHtml(p.customerName || 'Customer')}</span>
+              <span style="display: block; font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(p.maskedPaymentIdentifier || '')}</span>
+            </td>
+            <td>${escapeHtml(p.pharmacyName || 'Pharmacy #' + p.pharmacyId)}</td>
+            <td>
+              <span class="sidebar-badge" style="background: #eff6ff; color: #1e40af; font-size: 0.75rem;">
+                ${escapeHtml(p.paymentMethod || 'DEMO')}
+              </span>
+            </td>
+            <td><strong style="color: var(--text-main);">₹${(p.grossAmount || 0).toFixed(2)}</strong></td>
+            <td><span style="color: #64748b;">${p.commissionRate || 5.0}%</span></td>
+            <td><span style="color: #d97706; font-weight: 700;">₹${(p.commissionAmount || 0).toFixed(2)}</span></td>
+            <td><strong style="color: #059669;">₹${(p.netSettlementAmount || 0).toFixed(2)}</strong></td>
+            <td>
+              <span class="sidebar-badge" style="background: ${statusBadgeBg}; color: ${statusBadgeColor}; font-size: 0.75rem;">
+                ${escapeHtml(p.paymentStatus || 'PENDING')}
+              </span>
+            </td>
+            <td>
+              <span class="sidebar-badge" style="background: ${isSettled ? '#dcfce7' : isReversed ? '#fee2e2' : '#fef3c7'}; color: ${isSettled ? '#166534' : isReversed ? '#991b1b' : '#92400e'}; font-size: 0.75rem;">
+                ${isSettled ? '✓ SETTLED' : escapeHtml(p.settlementStatus || 'UNSETTLED')}
+              </span>
+            </td>
+            <td>
+              <button type="button" class="btn btn-outline-primary btn-inspect-txn" data-txnid="${p.id}" style="font-size: 0.75rem; padding: 0.3rem 0.65rem;">
+                🔍 Audit
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('.btn-inspect-txn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.getAttribute('data-txnid'));
+          const item = cachedAdminPayments.find(x => x.id === id);
+          if (item) openPaymentInspectionModal(item);
+        });
+      });
+    }
+
+    function openPaymentInspectionModal(item) {
+      const modal = document.getElementById('paymentInspectionModal');
+      const content = document.getElementById('inspectionModalContent');
+      if (!modal || !content) return;
+
+      content.innerHTML = `
+        <div style="background: #f8fafc; border-radius: 12px; padding: 1.25rem; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Transaction Reference</span>
+            <code style="background: white; padding: 4px 8px; border-radius: 6px; font-weight: 800; border: 1px solid #cbd5e1; color: #0f172a;">
+              ${escapeHtml(item.transactionReference || 'N/A')}
+            </code>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 0.88rem;">
+            <span style="color: #64748b;">Order Identifier:</span>
+            <strong style="color: #2563eb;">${escapeHtml(item.orderNumber || 'ORD-' + item.orderId)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 0.88rem;">
+            <span style="color: #64748b;">Transaction Timestamp:</span>
+            <strong style="color: #0f172a;">${item.createdAt ? new Date(item.createdAt).toLocaleString() : 'N/A'}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 0.88rem;">
+            <span style="color: #64748b;">Payment Method:</span>
+            <strong style="color: #0f172a;">${escapeHtml(item.paymentMethod || 'DEMO')}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem;">
+            <span style="color: #64748b;">Masked Account / UPI:</span>
+            <strong style="font-family: monospace; color: #059669;">${escapeHtml(item.maskedPaymentIdentifier || 'N/A')}</strong>
+          </div>
+        </div>
+
+        <h5 style="font-size: 0.85rem; font-weight: 800; color: #475569; text-transform: uppercase; margin: 0 0 0.65rem 0;">Financial Breakdown & Settlement Split</h5>
+        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+            <span>Gross Customer Payment:</span>
+            <strong>₹${(item.grossAmount || 0).toFixed(2)}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem; color: #d97706;">
+            <span>PharmaTech Admin Commission (${item.commissionRate}%):</span>
+            <strong>- ₹${(item.commissionAmount || 0).toFixed(2)}</strong>
+          </div>
+          <div style="border-top: 1px dashed #cbd5e1; padding-top: 0.6rem; display: flex; justify-content: space-between; font-size: 1.05rem; font-weight: 800; color: #059669;">
+            <span>Net Pharmacy Payout (${escapeHtml(item.pharmacyName)}):</span>
+            <span>₹${(item.netSettlementAmount || 0).toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.82rem;">
+          <div>
+            <strong>Payment Status:</strong> 
+            <span style="font-weight: 700; color: #059669;">${escapeHtml(item.paymentStatus)}</span>
+          </div>
+          <div>
+            <strong>Settlement Status:</strong> 
+            <span style="font-weight: 700; color: #2563eb;">${escapeHtml(item.settlementStatus)}</span>
+          </div>
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
+    function populatePharmacyFilterOptions() {
+      const select = document.getElementById('filterPaymentPharmacy');
+      if (!select || select.children.length > 1) return;
+      API.getAdminPharmacies().then(res => {
+        if (res && res.data) {
+          res.data.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.city})`;
+            select.appendChild(opt);
+          });
+        }
+      }).catch(e => console.warn(e));
+    }
+
+    // Modal Close
+    const btnCloseInspectionModal = document.getElementById('btnCloseInspectionModal');
+    if (btnCloseInspectionModal) {
+      btnCloseInspectionModal.addEventListener('click', () => {
+        document.getElementById('paymentInspectionModal').style.display = 'none';
+      });
+    }
+
+    // Filter Buttons
+    const btnApplyFilters = document.getElementById('btnApplyPaymentFilters');
+    if (btnApplyFilters) {
+      btnApplyFilters.addEventListener('click', () => loadAdminPayments());
+    }
+
+    const btnResetFilters = document.getElementById('btnResetPaymentFilters');
+    if (btnResetFilters) {
+      btnResetFilters.addEventListener('click', () => {
+        document.getElementById('filterPaymentSearch').value = '';
+        document.getElementById('filterPaymentStatus').value = 'ALL';
+        document.getElementById('filterPaymentPharmacy').value = '';
+        document.getElementById('filterPaymentDate').value = '';
+        loadAdminPayments();
+      });
+    }
+
+    // Commission & UPI Save Handlers
+    const btnSaveAdminUpi = document.getElementById('btnSaveAdminUpi');
+    if (btnSaveAdminUpi) {
+      btnSaveAdminUpi.addEventListener('click', async () => {
+        const val = document.getElementById('cfgAdminUpiId').value.trim();
+        if (!val) { alert('Please enter a valid Admin UPI ID.'); return; }
+        btnSaveAdminUpi.disabled = true;
+        btnSaveAdminUpi.textContent = 'Saving...';
+        try {
+          await API.updateAdminCommissionSetting({ adminUpiId: val });
+          alert('✓ Admin UPI ID updated successfully to: ' + val);
+        } catch (err) {
+          alert('Failed to update Admin UPI: ' + err.message);
+        } finally {
+          btnSaveAdminUpi.disabled = false;
+          btnSaveAdminUpi.textContent = 'Update UPI';
+        }
+      });
+    }
+
+    const btnSaveCommission = document.getElementById('btnSaveCommission');
+    if (btnSaveCommission) {
+      btnSaveCommission.addEventListener('click', async () => {
+        const rate = parseFloat(document.getElementById('cfgCommissionRate').value);
+        if (isNaN(rate) || rate < 0 || rate > 100) {
+          alert('Please enter a valid commission percentage between 0 and 100.');
+          return;
+        }
+        btnSaveCommission.disabled = true;
+        btnSaveCommission.textContent = 'Saving...';
+        try {
+          await API.updateAdminCommissionSetting({ commissionPercentage: rate });
+          document.getElementById('lblCurrentCommBadge').textContent = `${rate}%`;
+          alert('✓ Platform commission rate updated successfully to: ' + rate + '%');
+          loadAdminPayments();
+        } catch (err) {
+          alert('Failed to update commission rate: ' + err.message);
+        } finally {
+          btnSaveCommission.disabled = false;
+          btnSaveCommission.textContent = 'Save Commission';
+        }
+      });
+    }
+
+    const btnAutoSettleAll = document.getElementById('btnAutoSettleAll');
+    if (btnAutoSettleAll) {
+      btnAutoSettleAll.addEventListener('click', async () => {
+        btnAutoSettleAll.disabled = true;
+        btnAutoSettleAll.textContent = 'Disbursing Funds...';
+        try {
+          const res = await API.autoSettleAllPayments();
+          const d = res && res.data ? res.data : {};
+          const count = d.settledOrdersCount != null ? d.settledOrdersCount : 0;
+          const amt = d.totalDisbursedToOwners != null ? d.totalDisbursedToOwners : '0.00';
+          alert(`✓ Automatic Money Transfer Completed!\n• Settled Orders: ${count}\n• Total Transferred to Owners: ₹${amt}\n• Updated in both Admin and Pharmacy histories.`);
+          loadAdminPayments();
+        } catch (err) {
+          alert('Automatic transfer notice: ' + err.message);
+        } finally {
+          btnAutoSettleAll.disabled = false;
+          btnAutoSettleAll.textContent = '⚡ Auto-Transfer / Settle to Pharmacy Owners';
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
+    }
+
+    // Initial load
+    loadAdminData();
+  </script>
+</body>
+</html>

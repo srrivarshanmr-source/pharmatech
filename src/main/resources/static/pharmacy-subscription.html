@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partner Plan Subscription – PharmaTech</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'><path d='M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z'/></svg>">
+  <style>
+    .sub-page-wrapper {
+      min-height: calc(100vh - 80px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+      background: radial-gradient(circle at center top, #ecfdf5 0%, #f8fafc 100%);
+    }
+
+    .sub-container {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .sub-plan-card {
+      background: white;
+      border: 2px solid var(--primary-light);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 20px 40px -10px rgba(5, 150, 105, 0.15);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sub-badge-top {
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .sub-card-body {
+      padding: 2.5rem;
+    }
+
+    .price-box {
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+      margin: 1.25rem 0 1.75rem;
+    }
+
+    .price-currency {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+    }
+
+    .price-amount {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      line-height: 1;
+    }
+
+    .price-cycle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .benefits-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin: 1.5rem 0 2.25rem;
+    }
+
+    .benefit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    .check-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-full);
+      background: var(--primary-ultra-light);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Success Modal */
+    .activation-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(5px);
+      z-index: 500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .activation-modal-overlay.open {
+      display: flex;
+    }
+
+    .activation-modal {
+      background: white;
+      border-radius: var(--radius-xl);
+      max-width: 480px;
+      width: 100%;
+      padding: 2.5rem;
+      text-align: center;
+      box-shadow: var(--shadow-xl);
+      animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popUp {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .celebrate-icon-box {
+      width: 72px;
+      height: 72px;
+      border-radius: var(--radius-full);
+      background: #dcfce7;
+      color: #15803d;
+      font-size: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Minimal Header -->
+  <header class="navbar-wrapper">
+    <div class="navbar-container">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 10.5h-5.5V5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v5.5H5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h5.5V19c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-5.5H19c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5z"/>
+          </svg>
+        </div>
+        <div class="brand-text">Pharma<span>Tech</span></div>
+      </a>
+
+      <div>
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">
+          Step 2 of 2: Activate Partner Membership
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="sub-page-wrapper">
+    <div class="sub-container">
+
+      <div id="subStatusAlert" style="display: none; padding: 1rem 1.25rem; background: #ecfdf5; border: 1.5px solid #6ee7b7; border-radius: var(--radius-md); color: #065f46; font-size: 0.9rem; margin-bottom: 1.5rem; text-align: center;"></div>
+
+      <div class="sub-plan-card">
+        <div class="sub-badge-top">
+          ✨ Official Pharmacy Partner Tier
+        </div>
+
+        <div class="sub-card-body">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+              <span class="badge" style="background: var(--primary-ultra-light); color: var(--primary-dark); margin-bottom: 0.5rem; display: inline-block;">
+                Licensed Pharmacy Exclusive
+              </span>
+              <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-main);">
+                PharmaTech Pharmacy Partner Plan
+              </h2>
+              <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.25rem;">
+                Registered for: <strong id="subStoreName">Your Store</strong> • Pharmacist: <span id="subOwnerName">Owner</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Price Display -->
+          <div class="price-box">
+            <span class="price-currency">₹</span>
+            <span class="price-amount">200</span>
+            <span class="price-cycle">/ month</span>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid var(--border-light); margin-bottom: 1.5rem;">
+
+          <h4 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.75rem;">
+            Everything you get with Partner Membership:
+          </h4>
+
+          <!-- Benefits List -->
+          <ul class="benefits-list">
+            <li class="benefit-item">
+              <span class="check-icon">✓</span>
+              <div>
+                <strong>Online pharmacy presence:</strong> Showcase your physical pharmacy on PharmaTech map and search discovery.
+              </div>
+            </li>
+            <li class="benefit-item">
+              <span class="check-icon">✓</span>
+              <div>
+                <strong>Medicine inventory management:</strong> Add, edit, remove, and monitor medicine stock with low-stock alerts.
+              </div>
+            </li>
+            <li class="benefit-item">
+              <span class="check-icon">✓</span>
+              <div>
+                <strong>Customer visibility:</strong> Nearby patients searching for medicines see your verified store in real time.
+              </div>
+            </li>
+            <li class="benefit-item">
+              <span class="check-icon">✓</span>
+              <div>
+                <strong>Medicine availability updates:</strong> Instant catalog sync ensuring patients know accurate stock levels.
+              </div>
+            </li>
+            <li class="benefit-item" style="opacity: 0.75;">
+              <span class="check-icon" style="background: #f1f5f9; color: #64748b;">⏳</span>
+              <div>
+                <strong>Order management:</strong> Direct customer prescription receipt and invoice generator <em>(Upcoming in Milestone 2)</em>.
+              </div>
+            </li>
+          </ul>
+
+          <!-- Action Button -->
+          <button id="activateSubBtn" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.05rem; font-weight: 800;">
+            Activate Subscription (₹200/month)
+          </button>
+
+          <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 1rem;">
+            * Initial college demonstration milestone: payment gateway is simulated safely with instant database activation.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Activation Success Modal -->
+  <div class="activation-modal-overlay" id="activationSuccessModal">
+    <div class="activation-modal">
+      <div class="celebrate-icon-box">✓</div>
+      <h3 style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">Subscription Activated!</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Congratulations! Your pharmacy is now fully verified on the PharmaTech network. Your subscription is active for 30 days.
+      </p>
+
+      <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 0.85rem; font-size: 0.82rem; margin-bottom: 1.5rem; text-align: left;">
+        <div><strong>Plan:</strong> PharmaTech Pharmacy Partner Plan (₹200/mo)</div>
+        <div style="margin-top: 0.25rem;"><strong>Simulated Txn ID:</strong> <code id="modalTxnId">SIM-TXN-SUCCESS</code></div>
+        <div style="margin-top: 0.25rem;"><strong>Status:</strong> <span style="color: #059669; font-weight: 700;">ACTIVE (Saved in Database)</span></div>
+      </div>
+
+      <button id="goToDashboardBtn" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 0.95rem;">
+        Open Pharmacy Dashboard →
+      </button>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/subscription.js"></script>
+</body>
+</html>
