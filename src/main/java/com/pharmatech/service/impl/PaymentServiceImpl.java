@@ -146,6 +146,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Successfully verified
         order.setPaymentStatus("PAID");
+        order.setStatus("ORDER_PLACED");
         order.setPaymentMethod("RAZORPAY_GATEWAY");
         order.setRazorpayOrderId(request.getRazorpayOrderId());
         order.setRazorpayPaymentId(request.getRazorpayPaymentId());
@@ -207,6 +208,7 @@ public class PaymentServiceImpl implements PaymentService {
                     Order order = orderRepository.findByRazorpayOrderId(rzpOrderId).orElse(null);
                     if (order != null && !"PAID".equalsIgnoreCase(order.getPaymentStatus())) {
                         order.setPaymentStatus("PAID");
+                        order.setStatus("ORDER_PLACED");
                         if (rzpPayId != null) order.setRazorpayPaymentId(rzpPayId);
                         orderRepository.save(order);
 
@@ -574,6 +576,7 @@ public class PaymentServiceImpl implements PaymentService {
         String effectivePaymentId = paymentId != null ? paymentId : "pay_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
 
         order.setPaymentStatus("PAID");
+        order.setStatus("ORDER_PLACED");
         order.setPaymentMethod("RAZORPAY_UPI_QR");
         order.setRazorpayPaymentId(effectivePaymentId);
         orderRepository.save(order);

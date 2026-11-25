@@ -1,7 +1,9 @@
 const { spawn, execSync } = require('child_process');
 const path = require('path');
 
-const javaBin = path.join(__dirname, '.tools', 'jdk17.0.21_0', 'bin', 'java.exe');
+const fs = require('fs');
+const bundledJava = path.join(__dirname, '.tools', 'jdk17.0.21_0', 'bin', 'java.exe');
+const javaBin = fs.existsSync(bundledJava) ? bundledJava : 'java';
 const jarPath = path.join(__dirname, 'target', 'pharmatech-platform-1.0.0-SNAPSHOT.jar');
 
 console.log('Starting PharmaTech Spring Boot Server...');

@@ -4,13 +4,17 @@ echo ===================================================================
 echo   Starting PharmaTech - Medicine Availability Platform (Spring Boot)
 echo ===================================================================
 set "PROJECT_DIR=%~dp0"
-set "JAVA_HOME=%PROJECT_DIR%.tools\jdk17.0.21_0"
-set "PATH=%JAVA_HOME%\bin;%PROJECT_DIR%.tools\apache-maven-3.9.6\bin;%PATH%"
+
+rem Use bundled JDK/Maven if present, otherwise use system environment
+if exist "%PROJECT_DIR%.tools\jdk17.0.21_0\bin\java.exe" (
+    set "JAVA_HOME=%PROJECT_DIR%.tools\jdk17.0.21_0"
+    set "PATH=%PROJECT_DIR%.tools\jdk17.0.21_0\bin;%PROJECT_DIR%.tools\apache-maven-3.9.6\bin;%PATH%"
+)
 
 echo Checking Java version...
 java -version
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] Java could not be started.
+    echo [ERROR] Java could not be started. Please ensure Java 17+ is installed.
     pause
     exit /b %ERRORLEVEL%
 )
@@ -22,6 +26,6 @@ if exist "%PROJECT_DIR%target\pharmatech-platform-1.0.0-SNAPSHOT.jar" (
     java -jar "%PROJECT_DIR%target\pharmatech-platform-1.0.0-SNAPSHOT.jar"
 ) else (
     echo Building and launching via Maven...
-    mvn -s "%PROJECT_DIR%.tools\apache-maven-3.9.6\conf\settings.xml" spring-boot:run -DskipTests
+    mvn spring-boot:run -DskipTests
 )
 pause
